@@ -436,7 +436,7 @@ rimraf(tmpPath);
 mkdir(tmpPath);
 
 async.eachSeries(databases, function(database, nextDatabase) {
-
+	if (database.type.indexOf('city') !== -1) return;
 	async.seq(fetch, extract, processData)(database, nextDatabase);
 
 }, function(err) {
