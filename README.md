@@ -1,4 +1,4 @@
-geoip-country
+geoip-country [![NPM version](https://badge.fury.io/js/geoip-country.svg)](https://badge.fury.io/js/geoip-country)
 ==================
 
 Stripped down version of [geoip-lite](https://github.com/bluesmoon/node-geoip), supporting only country lookup in reference to [geoip-lite-country](https://github.com/arve0/node-geoip-country).
