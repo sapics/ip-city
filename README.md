@@ -1,7 +1,7 @@
 geoip-country [![NPM version](https://badge.fury.io/js/geoip-country.svg)](https://badge.fury.io/js/geoip-country)
 ==================
 
-Stripped down version of [geoip-lite](https://github.com/bluesmoon/node-geoip), supporting only country lookup in reference to [geoip-lite-country](https://github.com/arve0/node-geoip-country).
+Stripped down version of [geoip-lite](https://github.com/bluesmoon/node-geoip), supporting only country lookup in reference to [geoip-lite-country](https://github.com/arve0/node-geoip-country). It makes less memory usage.
 If you are not necessary to support ipv6 country data, please use [geoip-lite-country](https://github.com/arve0/node-geoip-country) for less memory.
 This repository include not only MaxMind ipv4 country data, but also ipv6 country data.
 
