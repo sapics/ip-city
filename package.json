@@ -1,6 +1,6 @@
 {
 	"name"        :  "geoip-country",
-	"version"     :  "3.1.9",
+	"version"     :  "3.1.10",
 	"description" :  "Stripped down version of geoip-lite, supporting only country lookup.",
 	"keywords"    :  ["geo", "geoip", "ip", "ipv4", "ipv6", "geolookup", "maxmind", "geolite"],
 	"homepage"    :  "https://github.com/sapics/node-geoip-country",
