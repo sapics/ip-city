@@ -1,7 +1,7 @@
 {
 	"name"        :  "geoip-country",
-	"version"     :  "3.1.10",
-	"description" :  "Stripped down version of geoip-lite, supporting only country lookup.",
+	"version"     :  "3.1.11",
+	"description" :  "Less memory usage version of geoip-lite, by supporting only country lookup.",
 	"keywords"    :  ["geo", "geoip", "ip", "ipv4", "ipv6", "geolookup", "maxmind", "geolite"],
 	"homepage"    :  "https://github.com/sapics/node-geoip-country",
 	"author"      :  "Philip Tellis <philip@bluesmoon.info> (http://bluesmoon.info/)",
@@ -27,7 +27,7 @@
 		"update": true
 	},
 	"devDependencies": {
-		"nodeunit": "^0.10.2"
+		"nodeunit": "^0.11.2"
 	},
 	"license": "Apache-2.0"
 }
