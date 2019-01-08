@@ -1,14 +1,33 @@
 {
-	"name"        :  "geoip-country",
-	"version"     :  "3.1.11",
-	"description" :  "Less memory usage version of geoip-lite, by supporting only country lookup.",
-	"keywords"    :  ["geo", "geoip", "ip", "ipv4", "ipv6", "geolookup", "maxmind", "geolite"],
-	"homepage"    :  "https://github.com/sapics/node-geoip-country",
-	"author"      :  "Philip Tellis <philip@bluesmoon.info> (http://bluesmoon.info/)",
-	"files"       :  ["lib/", "data/", "test/","scripts/"],
-	"main"        :  "lib/geoip.js",
-	"repository"  :  { "type": "git", "url": "git://github.com/sapics/node-geoip-country.git" },
-	"engines"     :  { "node": ">=0.6.3" },
+	"name": "geoip-country",
+	"version": "3.2.0",
+	"description": "Less memory usage version of geoip-lite, by supporting only country lookup.",
+	"keywords": [
+		"geo",
+		"geoip",
+		"ip",
+		"ipv4",
+		"ipv6",
+		"geolookup",
+		"maxmind",
+		"geolite"
+	],
+	"homepage": "https://github.com/sapics/node-geoip-country",
+	"author": "Philip Tellis <philip@bluesmoon.info> (http://bluesmoon.info/)",
+	"files": [
+		"lib/",
+		"data/",
+		"test/",
+		"scripts/"
+	],
+	"main": "lib/geoip.js",
+	"repository": {
+		"type": "git",
+		"url": "git://github.com/sapics/node-geoip-country.git"
+	},
+	"engines": {
+		"node": ">=0.6.3"
+	},
 	"scripts": {
 		"test": "nodeunit --reporter=minimal test/tests.js",
 		"updatedb": "node scripts/updatedb.js",
@@ -19,9 +38,10 @@
 		"colors": "^1.1.2",
 		"glob": "^7.1.1",
 		"iconv-lite": "^0.4.13",
+		"ip-address": "^5.8.9",
 		"lazy": "^1.0.11",
 		"rimraf": "^2.5.2",
-		"unzip": "^0.1.11"
+		"yauzl": "^2.9.2"
 	},
 	"config": {
 		"update": true
