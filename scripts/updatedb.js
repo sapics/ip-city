@@ -249,7 +249,7 @@ function processLookupCountry(src, cb){
 }
 
 function processCountryData(src, dest, cb) {
-	var lines=0;
+	var lines = 0, preCC, pos = 0, preEip = 0;
 	function processLine(line) {
 		var fields = CSVtoArray(line);
 
@@ -273,15 +273,43 @@ function processCountryData(src, dest, cb) {
 				rngip = new Address6(fields[0]);
 				sip = utils.aton6(rngip.startAddress().correctForm());
 				eip = utils.aton6(rngip.endAddress().correctForm());
-	
-				b = Buffer.alloc(bsz);
-				for (i = 0; i < sip.length; i++) {
-					b.writeUInt32BE(sip[i], i * 4);
+				
+				if (cc === preCC) {
+					var nextSip = preEip;
+					for(i = nextSip.length; i--; ) {
+						++nextSip[i];
+						if(nextSip === 4294967296) {
+							nextSip[i] = 0;
+						} else {
+							break;
+						}
+					}
+					for (i = 0; i < nextSip.length; ++i) {
+						if (sip[i] !== nextSip[i]) {
+							preCC = null;
+							break;
+						}
+					}
 				}
-	
-				for (i = 0; i < eip.length; i++) {
-					b.writeUInt32BE(eip[i], 16 + (i * 4));
+
+				if (cc !== preCC) {
+					b = Buffer.alloc(bsz);
+					b.fill(0);
+					for (i = 0; i < sip.length; i++) {
+						b.writeUInt32BE(sip[i], i * 4);
+					}
+		
+					for (i = 0; i < eip.length; i++) {
+						b.writeUInt32BE(eip[i], 16 + (i * 4));
+					}
+				} else {
+					b = Buffer.alloc(16);
+					b.fill(0);
+					for (i = 0; i < eip.length; i++) {
+						b.writeUInt32BE(eip[i], i * 4);
+					}
 				}
+
 			} else {
 				// IPv4
 				bsz = 10;
@@ -289,16 +317,31 @@ function processCountryData(src, dest, cb) {
 				rngip = new Address4(fields[0]);
 				sip = parseInt(rngip.startAddress().bigInteger(),10);
 				eip = parseInt(rngip.endAddress().bigInteger(),10);
-	
-				b = Buffer.alloc(bsz);
-				b.fill(0);
-				b.writeUInt32BE(sip, 0);
-				b.writeUInt32BE(eip, 4);
+				
+				if (preEip + 1 !== sip) {
+					preCC = null;
+				}
+				if (cc !== preCC) {
+					b = Buffer.alloc(bsz);
+					b.fill(0);
+					b.writeUInt32BE(sip, 0);
+					b.writeUInt32BE(eip, 4);
+				}	else {
+					b = Buffer.alloc(4);
+					b.fill(0);
+					b.writeUInt32BE(eip, 0);
+				}
 			}
-	
-			b.write(cc, bsz - 2);
-	
-			fs.writeSync(datFile, b, 0, bsz, null);
+			
+			preEip = eip;
+			if (cc !== preCC) {
+				b.write(cc, bsz - 2);
+				fs.writeSync(datFile, b, 0, bsz, pos);
+				pos += bsz;
+				preCC = cc;
+			} else {
+				fs.writeSync(datFile, b, 0, bsz < 16 ? 4: 16, pos - bsz + (bsz < 16 ? 4: 16));
+			}
 			if(Date.now() - tstart > 5000) {
 				tstart = Date.now();
 				process.stdout.write('\nStill working (' + lines + ') ...');
