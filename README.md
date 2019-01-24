@@ -1,11 +1,10 @@
 geoip-country [![NPM version](https://badge.fury.io/js/geoip-country.svg)](https://badge.fury.io/js/geoip-country)
 ==================
 
-Less memory usage version of [geoip-lite](https://github.com/bluesmoon/node-geoip). This supports only country lookup for less memory usage.
-This repository includes [MaxMind](https://www.maxmind.com/) ipv4 country data and ipv6 country data.
-
+Less memory usage version of [geoip-lite](https://github.com/bluesmoon/node-geoip). This supports only country lookup for less memory usage about **100MB**.
 The original software of this repository is written by Philip Tellis <philip@bluesmoon.info>, and latest version is available at [geoip-lite](https://github.com/bluesmoon/node-geoip).
-It includes GeoIP data which are created by [MaxMind](https://www.maxmind.com/).
+
+This repository includes [MaxMind](https://www.maxmind.com/) ipv4 country data and ipv6 country data.
 
 Synopsis
 --------
