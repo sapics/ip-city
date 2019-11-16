@@ -1,0 +1,38 @@
+name: automatic release
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - "!*"
+jobs:
+  release:
+    name: check version, add tag and release
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v1
+      - name: setup Node
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12.x
+          registry-url: 'https://registry.npmjs.org'
+      - name: install dependencies
+        run: |
+          npm i
+      - name: update
+        run: |
+          npm run-script updatedb
+          npm run-script update-package
+      - name: check version and add tag
+        env:
+          GITHUB_TOKEN: ${{secrets.GTOKEN}}
+          REPO: ${{github.repository}}
+          COMMIT: ${{github.sha}}
+        run: scripts/release.sh
+      - name: test
+        run: npm run test
+      - name: release
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
