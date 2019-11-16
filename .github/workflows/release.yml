@@ -1,10 +1,7 @@
-name: automatic release
+name: auto release
 on:
-  push:
-    branches:
-      - test
-    tags:
-      - "!*"
+  schedule:
+    - cron: '43 2 * * Thu'
 jobs:
   release:
     name: check version, add tag and release
