@@ -1,17 +1,6 @@
-cd ..
-
 # get current version from package.json
-TAG=$(cat package.json | grep version | cut -d " " -f 4 | tr -d "," | tr -d '"')
-echo "add new tag to GitHub: ${TAG}"
- 
-# Add tag to GitHub
-API_URL="https://api.github.com/repos/${REPO}/git/refs"
- 
-curl -s -X POST $API_URL \
-  -H "Authorization: token $GTOKEN" \
-  -d @- << EOS
-{
-  "ref": "refs/tags/${TAG}",
-  "sha": "${COMMIT}"
-}
-EOS
+VER=$(cat package.json | grep version | cut -d " " -f 4 | tr -d "," | tr -d '"')
+
+git config --local "action@github.com"
+git config --local user.name "GitHub Action"
+git commit -a -m "Auto Release v${VER} for updating ip data"

@@ -2,7 +2,7 @@ name: automatic release
 on:
   push:
     branches:
-      - master
+      - test
     tags:
       - "!*"
 jobs:
@@ -24,15 +24,15 @@ jobs:
         run: |
           npm run-script updatedb
           npm run-script update-package
-      - name: check version and add tag
-        env:
-          GITHUB_TOKEN: ${{secrets.GTOKEN}}
-          REPO: ${{github.repository}}
-          COMMIT: ${{github.sha}}
-        run: scripts/release.sh
       - name: test
         run: npm run test
-      - name: release
-        run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: commit
+        run: scripts/release.sh
+      - name: push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{secrets.GTOKEN}}
+#      - name: release
+#        run: npm publish
+#        env:
+#          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
