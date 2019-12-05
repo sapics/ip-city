@@ -1,5 +1,5 @@
 # get current version from package.json
-VER=$(cat package.json | grep version | cut -d " " -f 4 | tr -d "," | tr -d '"')
+VER=`node -p "require('./package.json').version"`
 
 git config --local "action@github.com"
 git config --local user.name "GitHub Action"
