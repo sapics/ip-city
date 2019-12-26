@@ -1,7 +1,7 @@
 name: auto release
-on:
-  schedule:
-    - cron: '43 2 * * Thu'
+#on:
+#  schedule:
+#    - cron: '43 2 * * Wed'
 jobs:
   release:
     name: check version, add tag and release

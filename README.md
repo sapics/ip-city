@@ -2,8 +2,7 @@ geoip-country [![NPM version](https://badge.fury.io/js/geoip-country.svg)](https
 ==================
 
 Less memory usage version of [geoip-lite](https://github.com/bluesmoon/node-geoip) by limiting to country information.
-This repository includes [MaxMind](https://www.maxmind.com/) ipv4 and ipv6 country data
-and updates every week for using latest geoip database.
+This repository includes [MaxMind](https://www.maxmind.com/) ipv4 and ipv6 country data.
 
 Synopsis
 --------
@@ -34,7 +33,7 @@ Installation
 API
 ---
 
-geoip-lite is completely synchronous.  There are no callbacks involved.  All blocking file IO is done at startup time, so all runtime
+geoip-country is completely synchronous.  There are no callbacks involved.  All blocking file IO is done at startup time, so all runtime
 calls are executed in-memory and are fast.  Startup may take up to 200ms while it reads into memory and indexes data files.
 
 ### Looking up an IP address ###
@@ -57,7 +56,7 @@ If the IP address was found, the `lookup` method returns an object with the foll
 ```
 
 The actual values for the `range` array depend on whether the IP is IPv4 or IPv6 and should be
-considered internal to `geoip-lite`.  To get a human readable format, pass them to `geoip.pretty()`
+considered internal to `geoip-country`.  To get a human readable format, pass them to `geoip.pretty()`
 
 If the IP address was not found, the `lookup` returns `null`
 
@@ -70,7 +69,7 @@ the `pretty` method can be used to turn it into a human readable string.
     console.log("The IP is %s", geoip.pretty(ip));
 ```
 
-This method returns a string if the input was in a format that `geoip-lite` can recognise, else it returns the
+This method returns a string if the input was in a format that `geoip-country` can recognise, else it returns the
 input itself.
 
 
@@ -88,7 +87,7 @@ npm run-script updatedb
 Caveats
 -------
 
-This package includes the GeoLite database from MaxMind.  This database is not the most accurate database available,
+This package includes the GeoLite2 database from MaxMind.  This database is not the most accurate database available,
 however it is the best available for free.  You can use the commercial GeoIP database from MaxMind with better
 accuracy by buying a license from MaxMind, and then using the conversion utility to convert it to a format that
 geoip-lite understands.  You will need to use the `.csv` files from MaxMind for conversion.
