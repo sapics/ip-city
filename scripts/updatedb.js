@@ -562,7 +562,7 @@ function processData(database, cb) {
 }
 
 if (!license_key || license_key === "true") {
-	console.log('No GeoIP License Key Provided, Please Provide Argument: `--license_key=`'.yellow);
+	console.log('No GeoLite2 License Key Provided, Please Provide Argument: `--license_key=`'.yellow);
 	process.exit(1);
 }
 
