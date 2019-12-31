@@ -3,12 +3,13 @@
 'use strict';
 
 var user_agent = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.36 Safari/537.36';
+var download_server = 'https://download.maxmind.com/app/geoip_download';
+var license_key = process.env.npm_config_license_key || null;
 
 var fs = require('fs');
 var https = require('https');
 var path = require('path');
 var url = require('url');
-var zlib = require('zlib');
 
 fs.existsSync = fs.existsSync || path.existsSync;
 
@@ -30,7 +31,8 @@ var cityLookup = {};
 var databases = [
 	{
 		type: 'country',
-		url: 'https://geolite.maxmind.com/download/geoip/database/GeoLite2-Country-CSV.zip',
+		edition: 'GeoLite2-Country-CSV',
+		suffix: 'zip',
 		src: [
 			'GeoLite2-Country-Locations-en.csv',
 			'GeoLite2-Country-Blocks-IPv4.csv',
@@ -44,7 +46,8 @@ var databases = [
 	},
 	{
 		type: 'city',
-		url: 'https://geolite.maxmind.com/download/geoip/database/GeoLite2-City-CSV.zip',
+		edition: 'GeoLite2-City-CSV',
+		suffix: 'zip',
 		src: [
 			'GeoLite2-City-Locations-en.csv',
 			'GeoLite2-City-Blocks-IPv4.csv',
@@ -74,7 +77,7 @@ function try_fixing_line(line) {
 	var pos2 = -1;
 	// escape quotes
 	line = line.replace(/""/,'\\"').replace(/'/g,"\\'");
-	
+
 	while(pos1 < line.length && pos2 < line.length) {
 		pos1 = pos2;
 		pos2 = line.indexOf(',', pos1 + 1);
@@ -115,13 +118,8 @@ function CSVtoArray(text) {
 
 function fetch(database, cb) {
 
-	var downloadUrl = database.url;
-	var fileName = downloadUrl.split('/').pop();
-	var gzip = path.extname(fileName) === '.gz';
-
-	if (gzip) {
-		fileName = fileName.replace('.gz', '');
-	}
+	var downloadUrl = download_server + '?edition_id=' + database.edition + '&suffix=' + database.suffix + "&license_key=" + encodeURIComponent(license_key);
+	var fileName = database.edition + '.' + database.suffix;
 
 	var tmpFile = path.join(tmpPath, fileName);
 
@@ -129,7 +127,7 @@ function fetch(database, cb) {
 		return cb(null, tmpFile, fileName, database);
 	}
 
-	console.log('Fetching ', downloadUrl);
+	console.log('Fetching edition ' + database.edition + ' from ' + download_server);
 
 	function getOptions() {
 		var options = url.parse(downloadUrl);
@@ -155,19 +153,18 @@ function fetch(database, cb) {
 		var status = response.statusCode;
 
 		if (status !== 200) {
-			console.log('ERROR'.red + ': HTTP Request Failed [%d %s]', status, https.STATUS_CODES[status]);
+			if (status === 401) {
+				console.log('ERROR'.red + ': Download Not Allowed — Is Your License Key Valid? [HTTP %d]', status);
+			} else {
+				console.log('ERROR'.red + ': HTTP Request Failed [%d]', status);
+			}
+
 			client.abort();
 			process.exit();
 		}
 
-		var tmpFilePipe;
 		var tmpFileStream = fs.createWriteStream(tmpFile);
-
-		if (gzip) {
-			tmpFilePipe = response.pipe(zlib.createGunzip()).pipe(tmpFileStream);
-		} else {
-			tmpFilePipe = response.pipe(tmpFileStream);
-		}
+		var tmpFilePipe = response.pipe(tmpFileStream);
 
 		tmpFilePipe.on('close', function() {
 			console.log(' DONE'.green);
@@ -209,7 +206,7 @@ function extract(tmpFile, tmpFileName, database, cb) {
 						});
 						var filePath = entry.fileName.split("/");
 						// filePath will always have length >= 1, as split() always returns an array of at least one string
-						var fileName = filePath[filePath.length - 1]; 
+						var fileName = filePath[filePath.length - 1];
 						readStream.pipe(fs.createWriteStream(path.join(tmpPath, fileName)));
 					});
 				}
@@ -273,7 +270,7 @@ function processCountryData(src, dest, cb) {
 				rngip = new Address6(fields[0]);
 				sip = utils.aton6(rngip.startAddress().correctForm());
 				eip = utils.aton6(rngip.endAddress().correctForm());
-				
+
 				if (cc === preCC) {
 					var nextSip = preEip;
 					for(i = nextSip.length; i--; ) {
@@ -298,7 +295,7 @@ function processCountryData(src, dest, cb) {
 					for (i = 0; i < sip.length; i++) {
 						b.writeUInt32BE(sip[i], i * 4);
 					}
-		
+
 					for (i = 0; i < eip.length; i++) {
 						b.writeUInt32BE(eip[i], 16 + (i * 4));
 					}
@@ -317,7 +314,7 @@ function processCountryData(src, dest, cb) {
 				rngip = new Address4(fields[0]);
 				sip = parseInt(rngip.startAddress().bigInteger(),10);
 				eip = parseInt(rngip.endAddress().bigInteger(),10);
-				
+
 				if (preEip + 1 !== sip) {
 					preCC = null;
 				}
@@ -332,7 +329,7 @@ function processCountryData(src, dest, cb) {
 					b.writeUInt32BE(eip, 0);
 				}
 			}
-			
+
 			preEip = eip;
 			if (cc !== preCC) {
 				b.write(cc, bsz - 2);
@@ -418,7 +415,7 @@ function processCityData(src, dest, cb) {
 				offset += 4;
 			}
 			b.writeUInt32BE(locId>>>0, 32);
-			
+
 			var lat = Math.round(parseFloat(fields[7]) * 10000);
 			var lon = Math.round(parseFloat(fields[8]) * 10000);
 			var area = parseInt(fields[9], 10);
@@ -490,7 +487,7 @@ function processCityDataNames(src, dest, cb) {
 			console.log("weird line: %s::", line);
 			return;
 		}
-		
+
 		locId = parseInt(fields[0]);
 
 		cityLookup[locId] = linesCount;
@@ -562,6 +559,11 @@ function processData(database, cb) {
 			});
 		});
 	}
+}
+
+if (!license_key || license_key === "true") {
+	console.log('No GeoIP License Key Provided, Please Provide Argument: `--license_key=`'.yellow);
+	process.exit(1);
 }
 
 rimraf(tmpPath);
