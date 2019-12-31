@@ -127,7 +127,7 @@ function fetch(database, cb) {
 		return cb(null, tmpFile, fileName, database);
 	}
 
-	console.log('Fetching ', downloadUrl);
+	console.log('Fetching edition ' + database.edition + ' from ' + download_server);
 
 	function getOptions() {
 		var options = url.parse(downloadUrl);
