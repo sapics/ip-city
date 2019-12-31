@@ -27,7 +27,9 @@ Installation
 
 ### 2. Update MaxMind's geoip data
 
-    $ npm run-script updatedb
+    $ npm run-script updatedb --license_key=YOUR_GEOIP_LICENSE_KEY
+
+_YOUR_GEOIP_LICENSE_KEY should be replaced by a valid GeoIP license key. Please [follow instructions](https://dev.maxmind.com/geoip/geoip2/geolite2/) provided by MaxMind to obtain a license key._
 
 
 API
@@ -81,8 +83,10 @@ A npm script alias has been setup to make this process easy. Please keep in mind
 rate limits that amount of downloads on their servers.
 
 ```shell
-npm run-script updatedb
+npm run-script updatedb --license_key=YOUR_GEOIP_LICENSE_KEY
 ```
+
+_YOUR_GEOIP_LICENSE_KEY should be replaced by a valid GeoIP license key. Please [follow instructions](https://dev.maxmind.com/geoip/geoip2/geolite2/) provided by MaxMind to obtain a license key._
 
 Caveats
 -------
