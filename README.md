@@ -2,7 +2,7 @@ geoip-country [![NPM version](https://badge.fury.io/js/geoip-country.svg)](https
 ==================
 
 Less memory usage version of [geoip-lite](https://github.com/bluesmoon/node-geoip) by limiting to country information.
-This repository includes [MaxMind](https://www.maxmind.com/) ipv4 and ipv6 country data.
+This repository includes GeoLite2 ipv4 and ipv6 country data which created by MaxMind, available from https://www.maxmind.com.
 
 Synopsis
 --------
@@ -36,7 +36,7 @@ API
 ---
 
 geoip-country is completely synchronous.  There are no callbacks involved.  All blocking file IO is done at startup time, so all runtime
-calls are executed in-memory and are fast.  Startup may take up to 200ms while it reads into memory and indexes data files.
+calls are executed in-memory and are fast.  Startup may take up to 20ms while it reads into memory and indexes data files.
 
 ### Looking up an IP address ###
 
@@ -71,7 +71,7 @@ the `pretty` method can be used to turn it into a human readable string.
     console.log("The IP is %s", geoip.pretty(ip));
 ```
 
-This method returns a string if the input was in a format that `geoip-country` can recognise, else it returns the
+This method returns a string if the input was in a format that `geoip-country` can recognize, else it returns the
 input itself.
 
 
@@ -92,9 +92,9 @@ Caveats
 -------
 
 This package includes the GeoLite2 database from MaxMind.  This database is not the most accurate database available,
-however it is the best available for free.  You can use the commercial GeoIP database from MaxMind with better
+however it is the best available for free.  You can use the commercial GeoIP2 database from MaxMind with better
 accuracy by buying a license from MaxMind, and then using the conversion utility to convert it to a format that
-geoip-lite understands.  You will need to use the `.csv` files from MaxMind for conversion.
+geoip-country understands.  You will need to use the `.csv` files from MaxMind for conversion.
 
 References
 ----------

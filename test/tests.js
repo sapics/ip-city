@@ -1,4 +1,6 @@
+console.time('StartUpTime')
 var geoip = require('../lib/geoip');
+console.timeEnd('StartUpTime')
 
 module.exports = {
 	testLookup: function(test) {
