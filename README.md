@@ -28,6 +28,8 @@ Installation
 ### 2. Update MaxMind's geoip data
 
     $ npm run-script updatedb --license_key=YOUR_GEOLITE2_LICENSE_KEY
+		or
+    $ GEOLITE2_LICENSE_KEY=YOUR_GEOLITE2_LICENSE_KEY node scripts/updatedb.js
 
 _YOUR_GEOLITE2_LICENSE_KEY should be replaced by a valid GeoLite2 license key. Please [follow instructions](https://dev.maxmind.com/geoip/geoip2/geolite2/) provided by MaxMind to obtain a license key._
 
@@ -84,6 +86,8 @@ rate limits that amount of downloads on their servers.
 
 ```shell
 npm run-script updatedb --license_key=YOUR_GEOLITE2_LICENSE_KEY
+	or
+GEOLITE2_LICENSE_KEY=YOUR_GEOLITE2_LICENSE_KEY node scripts/updatedb.js
 ```
 
 _YOUR_GEOLITE2_LICENSE_KEY should be replaced by a valid GeoLite2 license key. Please [follow instructions](https://dev.maxmind.com/geoip/geoip2/geolite2/) provided by MaxMind to obtain a license key._
