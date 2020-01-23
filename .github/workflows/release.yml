@@ -1,7 +1,8 @@
 name: auto release
-#on:
-#  schedule:
-#    - cron: '43 2 * * Wed'
+on:
+  push:
+  schedule:
+    - cron: '43 2 * * Wed'
 jobs:
   release:
     name: check version, add tag and release
@@ -21,6 +22,8 @@ jobs:
         run: |
           npm run-script updatedb
           npm run-script update-package
+        env:
+          GEOLITE2_LICENSE_KEY: ${{secrets.GEOLITE2_LICENSE_KEY}}
       - name: test
         run: npm run test
       - name: commit

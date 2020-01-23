@@ -2,7 +2,12 @@ geoip-country [![NPM version](https://badge.fury.io/js/geoip-country.svg)](https
 ==================
 
 Less memory usage version of [geoip-lite](https://github.com/bluesmoon/node-geoip) by limiting to country information.
-This repository includes GeoLite2 ipv4 and ipv6 country data which created by MaxMind, available from https://www.maxmind.com.
+This product includes GeoLite2 ipv4 and ipv6 country data which created by MaxMind, available from https://www.maxmind.com.
+
+**You should read this README and the LICENSE and EULA files carefully before deciding to use this product.**
+
+**After v4, LICENSE for the database was changed. If you need to use this product with previous LICENSE, please use v3.**
+
 
 Synopsis
 --------
@@ -92,27 +97,20 @@ GEOLITE2_LICENSE_KEY=YOUR_GEOLITE2_LICENSE_KEY node scripts/updatedb.js
 
 _YOUR_GEOLITE2_LICENSE_KEY should be replaced by a valid GeoLite2 license key. Please [follow instructions](https://dev.maxmind.com/geoip/geoip2/geolite2/) provided by MaxMind to obtain a license key._
 
-Caveats
+
+License and EULA
 -------
 
-This package includes the GeoLite2 database from MaxMind.  This database is not the most accurate database available,
-however it is the best available for free.  You can use the commercial GeoIP2 database from MaxMind with better
-accuracy by buying a license from MaxMind, and then using the conversion utility to convert it to a format that
-geoip-country understands.  You will need to use the `.csv` files from MaxMind for conversion.
+Please carefully read the LICENSE and EULA files. This package comes with certain restrictions and obligations, most notably:
+ - You cannot prevent the library from updating the databases.
+ - You cannot use the GeoLite2 data:
+   - for FCRA purposes,
+   - to identify specific households or individuals.
+
 
 References
 ----------
-  - <a href="http://www.maxmind.com/app/iso3166">Documentation from MaxMind</a>
-  - <a href="http://en.wikipedia.org/wiki/ISO_3166">ISO 3166 (1 & 2) codes</a>
-  - <a href="http://en.wikipedia.org/wiki/List_of_FIPS_region_codes">FIPS region codes</a>
-
-Copyright
----------
-
-`geoip-lite` is Copyright 2011-2012 Philip Tellis <philip@bluesmoon.info> and the latest version of the code is
-available at https://github.com/bluesmoon/node-geoip
-
-License
--------
-
-There are two licenses for the code and data.  See the [LICENSE](https://github.com/bluesmoon/node-geoip/blob/master/LICENSE) file for details.
+  - <a href="https://www.maxmind.com/en/geolite2/eula">EULA of GeoLite2</a>
+  - <a href="https://www.maxmind.com/app/iso3166">Documentation from MaxMind</a>
+  - <a href="https://en.wikipedia.org/wiki/ISO_3166">ISO 3166 (1 & 2) codes</a>
+  - <a href="https://en.wikipedia.org/wiki/List_of_FIPS_region_codes">FIPS region codes</a>
