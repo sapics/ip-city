@@ -1,16 +1,14 @@
-geoip-country [![NPM version](https://badge.fury.io/js/geoip-country.svg)](https://badge.fury.io/js/geoip-country)
-==================
+# geoip-country [![NPM version](https://badge.fury.io/js/geoip-country.svg)](https://badge.fury.io/js/geoip-country)
 
 Less memory usage version of [geoip-lite](https://github.com/bluesmoon/node-geoip) by limiting to country information.
 This product includes GeoLite2 ipv4 and ipv6 country data which created by MaxMind, available from https://www.maxmind.com.
+The database of this product **updates weekly**.
 
-**You should read this README and the LICENSE and EULA files carefully before deciding to use this product.**
-
+**You should read this README and the LICENSE and EULA files carefully before deciding to use this product.**<br>
 **After v4, LICENSE for the database was changed. If you need to use this product with previous LICENSE, please use v3.**
 
 
-Synopsis
---------
+## Synopsis
 
 ```javascript
 var geoip = require('geoip-country');
@@ -24,8 +22,8 @@ console.log(geo);
 ```
 
 
-Installation
-------------
+## Installation
+
 ### 1. Install the library
 
     $ npm install geoip-country
@@ -39,8 +37,7 @@ Installation
 _YOUR_GEOLITE2_LICENSE_KEY should be replaced by a valid GeoLite2 license key. Please [follow instructions](https://dev.maxmind.com/geoip/geoip2/geolite2/) provided by MaxMind to obtain a license key._
 
 
-API
----
+## API
 
 geoip-country is completely synchronous.  There are no callbacks involved.  All blocking file IO is done at startup time, so all runtime
 calls are executed in-memory and are fast.  Startup may take up to 20ms while it reads into memory and indexes data files.
@@ -82,8 +79,7 @@ This method returns a string if the input was in a format that `geoip-country` c
 input itself.
 
 
-Built-in Updater
-----------------
+## Built-in Updater
 
 This package contains an update script that can pull the files from MaxMind and handle the conversion from CSV.
 A npm script alias has been setup to make this process easy. Please keep in mind this requires internet and MaxMind
@@ -98,8 +94,7 @@ GEOLITE2_LICENSE_KEY=YOUR_GEOLITE2_LICENSE_KEY node scripts/updatedb.js
 _YOUR_GEOLITE2_LICENSE_KEY should be replaced by a valid GeoLite2 license key. Please [follow instructions](https://dev.maxmind.com/geoip/geoip2/geolite2/) provided by MaxMind to obtain a license key._
 
 
-License and EULA
--------
+## License and EULA
 
 Please carefully read the LICENSE and EULA files. This package comes with certain restrictions and obligations, most notably:
  - You cannot prevent the library from updating the databases.
@@ -107,10 +102,11 @@ Please carefully read the LICENSE and EULA files. This package comes with certai
    - for FCRA purposes,
    - to identify specific households or individuals.
 
+You can read [the latest version of GeoLite2 EULA](https://www.maxmind.com/en/geolite2/eula).
 
-References
-----------
-  - <a href="https://www.maxmind.com/en/geolite2/eula">EULA of GeoLite2</a>
+
+## References
+  - <a href="https://www.maxmind.com/en/geolite2/eula">GeoLite2 EULA</a>
   - <a href="https://www.maxmind.com/app/iso3166">Documentation from MaxMind</a>
   - <a href="https://en.wikipedia.org/wiki/ISO_3166">ISO 3166 (1 & 2) codes</a>
   - <a href="https://en.wikipedia.org/wiki/List_of_FIPS_region_codes">FIPS region codes</a>
