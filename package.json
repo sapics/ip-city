@@ -12,7 +12,7 @@
 		"maxmind",
 		"geolite"
 	],
-	"homepage": "https://github.com/sapics/node-geoip-country",
+	"homepage": "https://github.com/sapics/geoip-country",
 	"author": "sapics (https://github.com/sapics)",
 	"files": [
 		"lib/",
@@ -25,7 +25,7 @@
 	"main": "lib/geoip.js",
 	"repository": {
 		"type": "git",
-		"url": "git://github.com/sapics/node-geoip-country.git"
+		"url": "git://github.com/sapics/geoip-country.git"
 	},
 	"engines": {
 		"node": ">=0.6.3"

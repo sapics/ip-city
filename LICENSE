@@ -25,7 +25,7 @@ limitations under the License.
 
 DATABASES LICENSE (GeoLite2 databases)
 
-By downloading or using the "node-geoip-country" software library (published
+By downloading or using the "geoip-country" software library (published
 to the Node Package Manager at https://www.npmjs.com/package/geoip-country,
 thereafter the "Library"), you agree to be bound by the terms and
 conditions of this License.
