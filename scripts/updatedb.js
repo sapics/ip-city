@@ -3,7 +3,7 @@
 'use strict';
 
 var user_agent = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.36 Safari/537.36';
-var download_server = 'https://geoip.maxmind.com/app/geoip_download';
+var download_server = 'https://download.maxmind.com/app/geoip_download';
 var license_key = process.env.npm_config_license_key || process.env.GEOLITE2_LICENSE_KEY || null;
 
 var fs = require('fs');
