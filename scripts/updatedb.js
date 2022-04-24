@@ -159,7 +159,7 @@ function fetch(database, cb) {
 			}
 
 			client.abort();
-			process.exit();
+			process.exit(1);
 		}
 
 		var tmpFileStream = fs.createWriteStream(tmpFile);
