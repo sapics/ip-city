@@ -66,6 +66,16 @@ considered internal to `geoip-country`.  To get a human readable format, pass th
 
 If the IP address was not found, the `lookup` returns `null`
 
+### Update database API [Added at v4.1.0]
+
+You can update country database with `updateDatabase` method.
+
+```javascript
+    geoip.updateDatabase(license_key, callback);
+```
+
+`license_key` is a license key which provided by MaxMind. You can get GeoLite2 license key as [instructions](https://dev.maxmind.com/geoip/geoip2/geolite2/).
+
 ### Pretty printing an IP address ###
 
 If you have a 32 bit unsigned integer, or a number returned as part of the `range` array from the `lookup` method,
