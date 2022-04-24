@@ -570,9 +570,8 @@ rimraf(tmpPath);
 mkdir(tmpPath);
 
 async.eachSeries(databases, function(database, nextDatabase) {
-	if (database.type.indexOf('city') !== -1) return;
+	if (database.type.indexOf('city') !== -1) return nextDatabase();
 	async.seq(fetch, extract, processData)(database, nextDatabase);
-
 }, function(err) {
 	if (err) {
 		console.log('Failed to Update Databases from MaxMind.'.red);
@@ -580,7 +579,7 @@ async.eachSeries(databases, function(database, nextDatabase) {
 	} else {
 		console.log('Successfully Updated Databases from MaxMind.'.green);
 		if (process.argv[2] == 'debug') console.log('Notice: temporary files are not deleted for debug purposes.'.bold.yellow);
-		else rimraf(tmpPath);
+		else setTimeout(function(){rimraf(tmpPath);}, 100);
 		process.exit(0);
 	}
 });
