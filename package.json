@@ -1,6 +1,6 @@
 {
 	"name": "geoip-country",
-	"version": "4.0.117",
+	"version": "4.0.118",
 	"description": "Less memory usage version of geoip-lite, by supporting only country lookup.",
 	"keywords": [
 		"geo",
@@ -37,7 +37,7 @@
 		"update-package": "node scripts/update-package.js"
 	},
 	"dependencies": {
-		"async": "^2.6.1",
+		"async": "^2.6.4",
 		"colors": "^1.4.0",
 		"glob": "^7.1.6",
 		"iconv-lite": "^0.5.2",
@@ -50,7 +50,7 @@
 		"update": true
 	},
 	"devDependencies": {
-		"nodeunit-x": "^0.13.0"
+		"nodeunit-x": "^0.15.0"
 	},
 	"license": "MaxMind GeoLite2 License"
 }
