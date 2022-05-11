@@ -1,0 +1,24 @@
+name: test
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  release:
+    name: check version, add tag and release
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [0.10, 0.12, 4, 6, 8, 10, 12, 14, 16, 18]
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: setup Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: install dependencies
+        run: npm i
+      - name: test
+        run: npm run test
