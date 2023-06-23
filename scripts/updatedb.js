@@ -22,9 +22,16 @@ var yauzl = require('yauzl');
 var utils = require('../lib/utils');
 var Address6 = require('ip-address').Address6;
 var Address4 = require('ip-address').Address4;
-
-var dataPath = path.join(__dirname, '..', 'data');
-var tmpPath = path.join(__dirname, '..', 'tmp');
+var geodatadir = process.env.npm_config_geodatadir || process.env.GEODATADIR;
+var dataPath = path.resolve(__dirname, '..', 'data');
+if(geodatadir){
+	dataPath = path.resolve(process.cwd(), getdatadir)
+}
+var tmpdatadir = process.env.npm_config_tmpdatadir || process.env.TMPDATADIR;
+var tmpPath = path.resolve(__dirname, '..', 'tmp');
+if(tmpdatadir){
+	tmpPath = path.resolve(process.cwd(), tmpdatadir)
+}
 var countryLookup = {};
 var cityLookup = {};
 var databases = [
