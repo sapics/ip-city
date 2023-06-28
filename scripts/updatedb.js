@@ -575,6 +575,9 @@ if (!license_key || license_key === "true") {
 rimraf(tmpPath);
 mkdir(tmpPath);
 
+console.log('Fetching new databases from MaxMind...');
+console.log('Storing files at ' + dataPath.blue);
+
 async.eachSeries(databases, function(database, nextDatabase) {
 	if (database.type.indexOf('city') !== -1) return nextDatabase();
 	async.seq(fetch, extract, processData)(database, nextDatabase);
