@@ -5,7 +5,17 @@
 var user_agent = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.36 Safari/537.36';
 var download_server = 'https://download.maxmind.com/app/geoip_download';
 var license_key = process.env.npm_config_license_key || process.env.GEOLITE2_LICENSE_KEY || null;
-
+var geodatadir = process.env.npm_config_geodatadir || process.env.GEODATADIR;
+var tmpdatadir = process.env.npm_config_geotmpdatadir || process.env.GEOTMPDATADIR;
+for(var i = 0; i < process.argv.length; ++i){
+	if(process.argv[i].indexOf('--license_key=') === 0 && !license_key){
+		license_key = process.argv[i].slice(14);
+	} else if(process.argv[i].indexOf('--geodatadir=') === 0 && !geodatadir){
+		geodatadir = process.argv[i].slice(13);
+	} else if(process.argv[i].indexOf('--geotmpdatadir=') === 0 && !tmpdatadir){
+		tmpdatadir = process.argv[i].slice(16);
+	}
+}
 var fs = require('fs');
 var https = require('https');
 var path = require('path');
@@ -14,7 +24,6 @@ var url = require('url');
 fs.existsSync = fs.existsSync || path.existsSync;
 
 var async = require('async');
-var colors = require('colors');
 var iconv = require('iconv-lite');
 var lazy = require('lazy');
 var rimraf = require('rimraf').sync;
@@ -22,15 +31,16 @@ var yauzl = require('yauzl');
 var utils = require('../lib/utils');
 var Address6 = require('ip-address').Address6;
 var Address4 = require('ip-address').Address4;
-var geodatadir = process.env.npm_config_geodatadir || process.env.GEODATADIR;
-var dataPath = path.resolve(__dirname, '..', 'data');
+var dataPath, tmpPath;
 if(geodatadir){
-	dataPath = path.resolve(process.cwd(), geodatadir)
+	dataPath = path.resolve(process.cwd(), geodatadir);
+} else {
+ dataPath = path.resolve(__dirname, '..', 'data');
 }
-var tmpdatadir = process.env.npm_config_tmpdatadir || process.env.TMPDATADIR;
-var tmpPath = path.resolve(__dirname, '..', 'tmp');
 if(tmpdatadir){
-	tmpPath = path.resolve(process.cwd(), tmpdatadir)
+	tmpPath = path.resolve(process.cwd(), tmpdatadir);
+} else {
+	tmpPath = path.resolve(__dirname, '..', 'tmp');
 }
 var countryLookup = {};
 var cityLookup = {};
