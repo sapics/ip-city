@@ -25,7 +25,7 @@ var Address4 = require('ip-address').Address4;
 var geodatadir = process.env.npm_config_geodatadir || process.env.GEODATADIR;
 var dataPath = path.resolve(__dirname, '..', 'data');
 if(geodatadir){
-	dataPath = path.resolve(process.cwd(), getdatadir)
+	dataPath = path.resolve(process.cwd(), geodatadir)
 }
 var tmpdatadir = process.env.npm_config_tmpdatadir || process.env.TMPDATADIR;
 var tmpPath = path.resolve(__dirname, '..', 'tmp');
@@ -574,6 +574,9 @@ if (!license_key || license_key === "true") {
 
 rimraf(tmpPath);
 mkdir(tmpPath);
+
+console.log('Fetching new databases from MaxMind...');
+console.log('Storing files at ' + dataPath.blue);
 
 async.eachSeries(databases, function(database, nextDatabase) {
 	if (database.type.indexOf('city') !== -1) return nextDatabase();
