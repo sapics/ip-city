@@ -104,6 +104,13 @@ GEOLITE2_LICENSE_KEY=YOUR_GEOLITE2_LICENSE_KEY node scripts/updatedb.js
 _YOUR_GEOLITE2_LICENSE_KEY should be replaced by a valid GeoLite2 license key. Please [follow instructions](https://dev.maxmind.com/geoip/geoip2/geolite2/) provided by MaxMind to obtain a license key._
 
 
+## Custom Directory for database files
+
+You can store the database files in custom directory with the environment variable `GEODATADIR` or CLI parameter `--geodatadir=XXXXX`.
+For creating or updating the database files in custom directory, you need to run built-in updater as documented above with setting the environment variable `GEODATADIR` or CLI parameter `--geodatadir=XXXXX`.
+If you have no write-access to the `geoip-country` directory, it would be better to set the environment `GEOTMPDATADIR` or CLI parameter `--geotmpdatadir=YYYYY` for temporary directory when updating the database files.
+
+
 ## License and EULA
 
 Please carefully read the LICENSE and EULA files. This package comes with certain restrictions and obligations, most notably:
