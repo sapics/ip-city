@@ -170,9 +170,9 @@ function fetch(database, cb) {
 
 		if (status !== 200) {
 			if (status === 401) {
-				console.log('ERROR'.red + ': Download Not Allowed — Is Your License Key Valid? [HTTP %d]', status);
+				console.log('ERROR' + ': Download Not Allowed — Is Your License Key Valid? [HTTP %d]', status);
 			} else {
-				console.log('ERROR'.red + ': HTTP Request Failed [%d]', status);
+				console.log('ERROR' + ': HTTP Request Failed [%d]', status);
 			}
 
 			client.abort();
@@ -183,7 +183,7 @@ function fetch(database, cb) {
 		var tmpFilePipe = response.pipe(tmpFileStream);
 
 		tmpFilePipe.on('close', function() {
-			console.log(' DONE'.green);
+			console.log(' DONE');
 			cb(null, tmpFile, fileName, database);
 		});
 	}
@@ -256,7 +256,7 @@ function processLookupCountry(src, cb){
 		.skip(1)
 		.map(processLine)
 		.on('pipe', function() {
-			console.log(' DONE'.green);
+			console.log(' DONE');
 			cb();
 		});
 }
@@ -380,7 +380,7 @@ function processCountryData(src, dest, cb) {
 		.skip(1)
 		.map(processLine)
 		.on('pipe', function() {
-			console.log(' DONE'.green);
+			console.log(' DONE');
 			cb();
 		});
 }
@@ -569,7 +569,7 @@ function processData(database, cb) {
 			processCityData(src[1], dest[1], function() {
 				console.log("city data processed");
 				processCityData(src[2], dest[2], function() {
-					console.log(' DONE'.green);
+					console.log(' DONE');
 					cb();
 				});
 			});
@@ -586,17 +586,17 @@ rimraf(tmpPath);
 mkdir(tmpPath);
 
 console.log('Fetching new databases from MaxMind...');
-console.log('Storing files at ' + dataPath.blue);
+console.log('Storing files at ' + dataPath);
 
 async.eachSeries(databases, function(database, nextDatabase) {
 	if (database.type.indexOf('city') !== -1) return nextDatabase();
 	async.seq(fetch, extract, processData)(database, nextDatabase);
 }, function(err) {
 	if (err) {
-		console.log('Failed to Update Databases from MaxMind.'.red);
+		console.log('Failed to Update Databases from MaxMind.');
 		process.exit(1);
 	} else {
-		console.log('Successfully Updated Databases from MaxMind.'.green);
+		console.log('Successfully Updated Databases from MaxMind.');
 		if (process.argv[2] == 'debug') console.log('Notice: temporary files are not deleted for debug purposes.'.bold.yellow);
 		else setTimeout(function(){rimraf(tmpPath);}, 100);
 	}
