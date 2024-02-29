@@ -145,8 +145,8 @@ function fetch(database, cb) {
 
 	console.log('Fetching edition ' + database.edition + ' from ' + download_server);
 
-	function getOptions() {
-		var options = url.parse(downloadUrl);
+	function getOptions(redirectUrl) {
+		var options = url.parse(redirectUrl || downloadUrl);
 		options.headers = {
 			'User-Agent': user_agent
 		};
@@ -168,7 +168,9 @@ function fetch(database, cb) {
 	function onResponse(response) {
 		var status = response.statusCode;
 
-		if (status !== 200) {
+		if (status === 301 || status === 302 || status === 303 || status === 307 || status === 308) {
+			return https.get(getOptions(response.headers.location), onResponse);
+		} else if (status !== 200) {
 			if (status === 401) {
 				console.log('ERROR' + ': Download Not Allowed — Is Your License Key Valid? [HTTP %d]', status);
 			} else {
