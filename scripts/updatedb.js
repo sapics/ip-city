@@ -580,7 +580,7 @@ function processData(database, cb) {
 }
 
 if (!license_key || license_key === "true") {
-	console.log('No GeoLite2 License Key Provided, Please Provide Argument: `--license_key=`'.yellow);
+	console.log('No GeoLite2 License Key Provided, Please Provide Argument: `--license_key=`');
 	process.exit(1);
 }
 
@@ -599,8 +599,8 @@ async.eachSeries(databases, function(database, nextDatabase) {
 		process.exit(1);
 	} else {
 		console.log('Successfully Updated Databases from MaxMind.');
-		if (process.argv[2] == 'debug') console.log('Notice: temporary files are not deleted for debug purposes.'.bold.yellow);
-		else setTimeout(function(){rimraf(tmpPath);}, 100);
+		if (process.argv.indexOf('debug') !== -1) console.log('Notice: temporary files are not deleted for debug purposes.');
+		else rimraf(tmpPath);
 		process.exit(0);
 	}
 });
