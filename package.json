@@ -41,7 +41,6 @@
 		"iconv-lite": "^0.5.2",
 		"ip-address": "^6.3.0",
 		"lazy": "^1.0.11",
-		"rimraf": "^2.7.1",
 		"yauzl": "^2.10.0"
 	},
 	"config": {

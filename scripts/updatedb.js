@@ -26,12 +26,27 @@ fs.existsSync = fs.existsSync || path.existsSync;
 var async = require('async');
 var iconv = require('iconv-lite');
 var lazy = require('lazy');
-var rimraf = require('rimraf').sync;
 var yauzl = require('yauzl');
 var utils = require('../lib/utils');
 var Address6 = require('ip-address').Address6;
 var Address4 = require('ip-address').Address4;
 var dataPath, tmpPath;
+
+function rimraf(dir){
+	try{
+		var dirStat = fs.statSync(dir)
+		if(dirStat.isDirectory()){
+			var list = fs.readdirSync(dir)
+			for(var i = 0; i < list.length; ++i){
+				rimraf(path.join(dir, list[i]))
+			}
+			fs.rmdirSync(dir)
+		} else {
+			fs.unlinkSync(dir)
+		}
+	}catch(e){}
+}
+
 if(geodatadir){
 	dataPath = path.resolve(process.cwd(), geodatadir);
 } else {
