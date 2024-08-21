@@ -7,13 +7,17 @@ var download_server = process.env.npm_config_geolite2_download_url || process.en
 var license_key = process.env.npm_config_license_key || process.env.GEOLITE2_LICENSE_KEY || null;
 var geodatadir = process.env.npm_config_geodatadir || process.env.GEODATADIR;
 var tmpdatadir = process.env.npm_config_geotmpdatadir || process.env.GEOTMPDATADIR;
+var ip_location_db = process.env.npm_config_ip_location_db || process.env.IP_LOCATION_DB || null;
 for(var i = 0; i < process.argv.length; ++i){
-	if(process.argv[i].indexOf('--license_key=') === 0 && !license_key){
-		license_key = process.argv[i].slice(14);
-	} else if(process.argv[i].indexOf('--geodatadir=') === 0 && !geodatadir){
-		geodatadir = process.argv[i].slice(13);
-	} else if(process.argv[i].indexOf('--geotmpdatadir=') === 0 && !tmpdatadir){
-		tmpdatadir = process.argv[i].slice(16);
+	var arg = process.argv[i];
+	if(arg.indexOf('--license_key=') === 0 && !license_key){
+		license_key = arg.slice(14);
+	} else if(arg.indexOf('--geodatadir=') === 0 && !geodatadir){
+		geodatadir = arg.slice(13);
+	} else if(arg.indexOf('--geotmpdatadir=') === 0 && !tmpdatadir){
+		tmpdatadir = arg.slice(16);
+	} else if(arg.indexOf('--ip_location_db=') === 0) {
+		ip_location_db = arg.slice(17).replace('-country', '');
 	}
 }
 var fs = require('fs');
@@ -148,17 +152,20 @@ function CSVtoArray(text) {
 
 
 function fetch(database, cb) {
-
-	var downloadUrl = download_server + '?edition_id=' + database.edition + '&suffix=' + database.suffix + "&license_key=" + encodeURIComponent(license_key);
-	var fileName = database.edition + '.' + database.suffix;
+	var downloadUrl, fileName;
+	if(typeof database === 'string') {
+		downloadUrl = database;
+		fileName = path.basename(downloadUrl);
+	} else {
+		downloadUrl = download_server + '?edition_id=' + database.edition + '&suffix=' + database.suffix + "&license_key=" + encodeURIComponent(license_key);
+		fileName = database.edition + '.' + database.suffix;
+		console.log('Fetching edition ' + database.edition + ' from ' + download_server);
+	}
 
 	var tmpFile = path.join(tmpPath, fileName);
-
 	if (fs.existsSync(tmpFile)) {
 		return cb(null, tmpFile, fileName, database);
 	}
-
-	console.log('Fetching edition ' + database.edition + ' from ' + download_server);
 
 	function getOptions(redirectUrl) {
 		var options = url.parse(redirectUrl || downloadUrl);
@@ -308,7 +315,7 @@ function processCountryData(src, dest, cb) {
 					var nextSip = preEip;
 					for(i = nextSip.length; i--; ) {
 						++nextSip[i];
-						if(nextSip === 4294967296) {
+						if(nextSip[i] === 4294967296) {
 							nextSip[i] = 0;
 						} else {
 							break;
@@ -398,6 +405,137 @@ function processCountryData(src, dest, cb) {
 		.map(processLine)
 		.on('pipe', function() {
 			console.log(' DONE');
+			cb();
+		});
+}
+
+function processCountryDataIpLocationDb(src, fileName, srcUrl, cb) {
+	var lines = 0, preCC, pos = 0, preEip = 0;
+	function processLine(line) {
+		var fields = line.split(',');
+
+		if (!fields || fields.length < 3) {
+			console.log("weird line: %s::", line);
+			return;
+		}
+		lines++;
+
+		var sip;
+		var eip;
+		var rngip;
+		var cc = fields[2];
+		var b;
+		var bsz;
+		var i;
+		if(cc){
+			if (src.indexOf('ipv6') > 0) {
+				// IPv6
+				bsz = 34;
+				sip = utils.aton6(fields[0]);
+				eip = utils.aton6(fields[1]);
+
+				if (cc === preCC) {
+					var nextSip = preEip;
+					for(i = nextSip.length; i--; ) {
+						++nextSip[i];
+						if(nextSip[i] === 4294967296) {
+							nextSip[i] = 0;
+						} else {
+							break;
+						}
+					}
+					for (i = 0; i < nextSip.length; ++i) {
+						if (sip[i] !== nextSip[i]) {
+							preCC = null;
+							break;
+						}
+					}
+				}
+
+				if (cc !== preCC) {
+					b = Buffer.alloc(bsz);
+					b.fill(0);
+					for (i = 0; i < sip.length; i++) {
+						b.writeUInt32BE(sip[i], i * 4);
+					}
+
+					for (i = 0; i < eip.length; i++) {
+						b.writeUInt32BE(eip[i], 16 + (i * 4));
+					}
+				} else {
+					console.log('SAME!!! ipv6')
+					b = Buffer.alloc(16);
+					b.fill(0);
+					for (i = 0; i < eip.length; i++) {
+						b.writeUInt32BE(eip[i], i * 4);
+					}
+				}
+
+			} else {
+				// IPv4
+				bsz = 10;
+
+				rngip = new Address4(fields[0]);
+				sip = parseInt(rngip.bigInteger(),10);
+				rngip = new Address4(fields[1]);
+				eip = parseInt(rngip.bigInteger(),10);
+
+				if (preEip + 1 !== sip) {
+					preCC = null;
+				}
+				if (cc !== preCC) {
+					b = Buffer.alloc(bsz);
+					b.fill(0);
+					b.writeUInt32BE(sip, 0);
+					b.writeUInt32BE(eip, 4);
+				}	else {
+					console.log('SAME!!! ipv4')
+					b = Buffer.alloc(4);
+					b.fill(0);
+					b.writeUInt32BE(eip, 0);
+				}
+			}
+
+			preEip = eip;
+			if (cc !== preCC) {
+				b.write(cc, bsz - 2);
+				fs.writeSync(datFile, b, 0, bsz, pos);
+				pos += bsz;
+				preCC = cc;
+			} else {
+				fs.writeSync(datFile, b, 0, bsz < 16 ? 4: 16, pos - bsz + (bsz < 16 ? 4: 16));
+			}
+			if(Date.now() - tstart > 5000) {
+				tstart = Date.now();
+				process.stdout.write('\nStill working (' + lines + ') ...');
+			}
+		}
+	}
+
+	var dest
+	if(src.indexOf('ipv4') > 0){
+		dest = 'geoip-country.dat';
+	} else {
+		dest = 'geoip-country6.dat';
+	}
+	var dataFile = path.join(dataPath, dest);
+	var tmpDataFile = src
+
+	rimraf(dataFile);
+
+	process.stdout.write('Processing Data (may take a moment) ...');
+	var tstart = Date.now();
+	var datFile = fs.openSync(dataFile, "w");
+
+	lazy(fs.createReadStream(tmpDataFile))
+		.lines
+		.map(function(byteArray) {
+			return iconv.decode(byteArray, 'latin1');
+		})
+		.map(processLine)
+		.on('pipe', function() {
+			console.log(' DONE (lines: ' + lines + ')');
+			fs.closeSync(datFile);
 			cb();
 		});
 }
@@ -594,28 +732,49 @@ function processData(database, cb) {
 	}
 }
 
-if (!license_key || license_key === "true") {
-	console.log('No GeoLite2 License Key Provided, Please Provide Argument: `--license_key=`');
-	process.exit(1);
-}
-
 rimraf(tmpPath);
 mkdir(tmpPath);
 
-console.log('Fetching new databases from MaxMind...');
-console.log('Storing files at ' + dataPath);
-
-async.eachSeries(databases, function(database, nextDatabase) {
-	if (database.type.indexOf('city') !== -1) return nextDatabase();
-	async.seq(fetch, extract, processData)(database, nextDatabase);
-}, function(err) {
-	if (err) {
-		console.log('Failed to Update Databases from MaxMind.');
+if(ip_location_db){
+	var preUrl = 'https://cdn.jsdelivr.net/npm/@ip-location-db/'+ip_location_db+'-country/'+ip_location_db+'-country'
+	var ipv4Url = preUrl+'-ipv4.csv'
+	var ipv6Url = preUrl+'-ipv6.csv'
+	async.seq(fetch, processCountryDataIpLocationDb)(ipv4Url, function(err){
+		if(err){
+			console.log('Failed to Update Databases ip-location-db/' + ip_location_db);
+			process.exit(1);
+		}
+		async.seq(fetch, processCountryDataIpLocationDb)(ipv6Url, function(err){
+			if(err){
+				console.log('Failed to Update Databases ip-location-db/' + ip_location_db);
+				process.exit(1);
+			}
+			console.log('Successfully Updated Database.');
+//			rimraf(tmpPath);
+			process.exit(0);
+		});
+	})
+} else {
+	if (!license_key || license_key === "true") {
+		console.log('No GeoLite2 License Key Provided, Please Provide Argument: `--license_key=`');
 		process.exit(1);
-	} else {
-		console.log('Successfully Updated Databases from MaxMind.');
-		if (process.argv.indexOf('debug') !== -1) console.log('Notice: temporary files are not deleted for debug purposes.');
-		else rimraf(tmpPath);
-		process.exit(0);
 	}
-});
+
+	console.log('Fetching new databases from MaxMind...');
+	console.log('Storing files at ' + dataPath);
+	
+	async.eachSeries(databases, function(database, nextDatabase) {
+		if (database.type.indexOf('city') !== -1) return nextDatabase();
+		async.seq(fetch, extract, processData)(database, nextDatabase);
+	}, function(err) {
+		if (err) {
+			console.log('Failed to Update Databases from MaxMind.');
+			process.exit(1);
+		} else {
+			console.log('Successfully Updated Databases from MaxMind.');
+			if (process.argv.indexOf('debug') !== -1) console.log('Notice: temporary files are not deleted for debug purposes.');
+			else rimraf(tmpPath);
+			process.exit(0);
+		}
+	});
+}

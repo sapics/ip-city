@@ -96,7 +96,7 @@ A npm script alias has been setup to make this process easy. Please keep in mind
 rate limits that amount of downloads on their servers.
 
 ```shell
-npm run-script updatedb --license_key=YOUR_GEOLITE2_LICENSE_KEY
+npm run updatedb --license_key=YOUR_GEOLITE2_LICENSE_KEY
 	or
 GEOLITE2_LICENSE_KEY=YOUR_GEOLITE2_LICENSE_KEY node scripts/updatedb.js
 ```
@@ -109,6 +109,13 @@ _YOUR_GEOLITE2_LICENSE_KEY should be replaced by a valid GeoLite2 license key. P
 You can store the database files in custom directory with the environment variable `GEODATADIR` or CLI parameter `--geodatadir=XXXXX`.
 For creating or updating the database files in custom directory, you need to run built-in updater as documented above with setting the environment variable `GEODATADIR` or CLI parameter `--geodatadir=XXXXX`.
 If you have no write-access to the `geoip-country` directory, it would be better to set the environment `GEOTMPDATADIR` or CLI parameter `--geotmpdatadir=YYYYY` for temporary directory when updating the database files.
+
+
+## Use ip-location-db database
+
+You can use [ip-location-db](https://github.com/sapics/ip-location-db) database with the environment variable `IP_LOCATION_DB` or CLI parameter `--ip_location_db=XXXXX`. For example, if you want to use `geolite2-geo-whois-asn-country`, you can update the database by executing `npm run updatedb --ip_location_db=geolite2-geo-whois-asn`.
+
+If you cannot use `geolite2` licence for your use-case, the licence issue can be circumvented by replacing the database in [ip-location-db](https://github.com/sapics/ip-location-db), as there is also a [CC0](https://creativecommons.org/publicdomain/zero/1.0/deed) license database in [ip-location-db](https://github.com/sapics/ip-location-db).
 
 
 ## License and EULA
