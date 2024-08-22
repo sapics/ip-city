@@ -127,6 +127,7 @@ Please carefully read the LICENSE and EULA files. This package comes with certai
    - to identify specific households or individuals.
 
 You can read [the latest version of GeoLite2 EULA](https://www.maxmind.com/en/geolite2/eula).
+GeoLite2 database is provided under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) by [MaxMind](https://www.maxmind.com/), so, you must create attribusion to [MaxMind](https://www.maxmind.com/) for using GeoLite2 database.
 
 
 ## References
