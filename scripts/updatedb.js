@@ -8,18 +8,25 @@ var license_key = process.env.npm_config_license_key || process.env.GEOLITE2_LIC
 var geodatadir = process.env.npm_config_geodatadir || process.env.GEODATADIR;
 var tmpdatadir = process.env.npm_config_geotmpdatadir || process.env.GEOTMPDATADIR;
 var ip_location_db = process.env.npm_config_ip_location_db || process.env.IP_LOCATION_DB || null;
+var series = process.env.npm_config_series || process.env.GEODBSERIES;
 for(var i = 0; i < process.argv.length; ++i){
 	var arg = process.argv[i];
-	if(arg.indexOf('--license_key=') === 0 && !license_key){
-		license_key = arg.slice(14);
+	if(arg.indexOf('license_key=') >= 0 && !license_key){
+		license_key = arg.slice(arg.indexOf('=') + 1);
 	} else if(arg.indexOf('--geodatadir=') === 0 && !geodatadir){
-		geodatadir = arg.slice(13);
+		geodatadir = arg.slice(arg.indexOf('=') + 1);
 	} else if(arg.indexOf('--geotmpdatadir=') === 0 && !tmpdatadir){
-		tmpdatadir = arg.slice(16);
+		tmpdatadir = arg.slice(arg.indexOf('=') + 1);
 	} else if(arg.indexOf('--ip_location_db=') === 0) {
-		ip_location_db = arg.slice(17).replace('-country', '');
+		ip_location_db = arg.slice(arg.indexOf('=') + 1).replace('-country', '');
+	} else if(arg.indexOf('series=') >= 0){
+		series = arg.slice(arg.indexOf('=') + 1);
 	}
 }
+if(!series){
+	series = 'GeoLite2';
+}
+
 var fs = require('fs');
 var https = require('https');
 var path = require('path');
@@ -66,12 +73,12 @@ var cityLookup = {};
 var databases = [
 	{
 		type: 'country',
-		edition: 'GeoLite2-Country-CSV',
+		edition: series+'-Country-CSV',
 		suffix: 'zip',
 		src: [
-			'GeoLite2-Country-Locations-en.csv',
-			'GeoLite2-Country-Blocks-IPv4.csv',
-			'GeoLite2-Country-Blocks-IPv6.csv'
+			series+'-Country-Locations-en.csv',
+			series+'-Country-Blocks-IPv4.csv',
+			series+'-Country-Blocks-IPv6.csv'
 		],
 		dest: [
 			'',
@@ -81,12 +88,12 @@ var databases = [
 	},
 	{
 		type: 'city',
-		edition: 'GeoLite2-City-CSV',
+		edition: series+'-City-CSV',
 		suffix: 'zip',
 		src: [
-			'GeoLite2-City-Locations-en.csv',
-			'GeoLite2-City-Blocks-IPv4.csv',
-			'GeoLite2-City-Blocks-IPv6.csv'
+			series+'-City-Locations-en.csv',
+			series+'-City-Blocks-IPv4.csv',
+			series+'-City-Blocks-IPv6.csv'
 		],
 		dest: [
 			'geoip-city-names.dat',
