@@ -9,6 +9,7 @@ var geodatadir = process.env.npm_config_geodatadir || process.env.GEODATADIR;
 var tmpdatadir = process.env.npm_config_geotmpdatadir || process.env.GEOTMPDATADIR;
 var ip_location_db = process.env.npm_config_ip_location_db || process.env.IP_LOCATION_DB || null;
 var series = process.env.npm_config_series || process.env.GEODBSERIES;
+var isDebug = process.argv.indexOf('debug') >= 0;
 for(var i = 0; i < process.argv.length; ++i){
 	var arg = process.argv[i];
 	if(arg.indexOf('license_key=') >= 0 && !license_key){
@@ -36,6 +37,7 @@ fs.existsSync = fs.existsSync || path.existsSync;
 
 var async = require('async');
 var iconv = require('iconv-lite');
+var readline = require('readline');
 var lazy = require('lazy');
 var yauzl = require('yauzl');
 var utils = require('../lib/utils');
@@ -293,8 +295,12 @@ function processLookupCountry(src, cb){
 }
 
 function processCountryData(src, dest, cb) {
-	var lines = 0, preCC, pos = 0, preEip = 0;
+	var lines = 0, preCC, preB, preEip = 0, isFirstLine = true;
 	function processLine(line) {
+		if(isFirstLine){
+			isFirstLine = false;
+			return;
+		}
 		var fields = CSVtoArray(line);
 
 		if (!fields || fields.length < 6) {
@@ -309,7 +315,7 @@ function processCountryData(src, dest, cb) {
 		var cc = countryLookup[fields[1]];
 		var b;
 		var bsz;
-		var i;
+		var i, isNew = false;
 		if(cc){
 			if (fields[0].match(/:/)) {
 				// IPv6
@@ -337,20 +343,18 @@ function processCountryData(src, dest, cb) {
 				}
 
 				if (cc !== preCC) {
+					isNew = true
 					b = Buffer.alloc(bsz);
 					b.fill(0);
 					for (i = 0; i < sip.length; i++) {
 						b.writeUInt32BE(sip[i], i * 4);
 					}
-
 					for (i = 0; i < eip.length; i++) {
 						b.writeUInt32BE(eip[i], 16 + (i * 4));
 					}
 				} else {
-					b = Buffer.alloc(16);
-					b.fill(0);
 					for (i = 0; i < eip.length; i++) {
-						b.writeUInt32BE(eip[i], i * 4);
+						preB.writeUInt32BE(eip[i], 16 + (i * 4));
 					}
 				}
 
@@ -366,30 +370,27 @@ function processCountryData(src, dest, cb) {
 					preCC = null;
 				}
 				if (cc !== preCC) {
+					isNew = true
 					b = Buffer.alloc(bsz);
 					b.fill(0);
 					b.writeUInt32BE(sip, 0);
 					b.writeUInt32BE(eip, 4);
 				}	else {
-					b = Buffer.alloc(4);
-					b.fill(0);
-					b.writeUInt32BE(eip, 0);
+					preB.writeUInt32BE(eip, 4);
 				}
 			}
 
-			preEip = eip;
-			if (cc !== preCC) {
+			if(isNew){
+				if(preB){
+					if(!datFile.write(preB)){
+						rl.pause();
+					}
+				}
 				b.write(cc, bsz - 2);
-				fs.writeSync(datFile, b, 0, bsz, pos);
-				pos += bsz;
+				preB = b;
+			}
 				preCC = cc;
-			} else {
-				fs.writeSync(datFile, b, 0, bsz < 16 ? 4: 16, pos - bsz + (bsz < 16 ? 4: 16));
-			}
-			if(Date.now() - tstart > 5000) {
-				tstart = Date.now();
-				process.stdout.write('\nStill working (' + lines + ') ...');
-			}
+			preEip = eip;
 		}
 	}
 
@@ -400,28 +401,27 @@ function processCountryData(src, dest, cb) {
 	mkdir(dataFile);
 
 	process.stdout.write('Processing Data (may take a moment) ...');
-	var tstart = Date.now();
-	var datFile = fs.openSync(dataFile, "w");
-
-	lazy(fs.createReadStream(tmpDataFile))
-		.lines
-		.map(function(byteArray) {
-			return iconv.decode(byteArray, 'latin1');
+	var datFile = fs.createWriteStream(dataFile);
+	var rl = readline.createInterface({ 
+		input: fs.createReadStream(tmpDataFile),
+		crlfDelay: Infinity
 		})
-		.skip(1)
-		.map(processLine)
-		.on('pipe', function() {
+	rl.on('line', processLine)
+	rl.on('pause', function(){
+		datFile.once('drain', function(){
+			rl.resume();
+		})
+	})
+	rl.on('close', function(){
 			console.log(' DONE');
-			fs.closeSync(datFile);
-			cb();
-		});
+			datFile.end(preB,cb);
+	})
 }
 
 function processCountryDataIpLocationDb(src, fileName, srcUrl, cb) {
-	var lines = 0, preCC, pos = 0, preEip = 0;
+	var lines = 0, preCC;
 	function processLine(line) {
 		var fields = line.split(',');
-
 		if (!fields || fields.length < 3) {
 			console.log("weird line: %s::", line);
 			return;
@@ -442,81 +442,33 @@ function processCountryDataIpLocationDb(src, fileName, srcUrl, cb) {
 				sip = utils.aton6(fields[0]);
 				eip = utils.aton6(fields[1]);
 
-				if (cc === preCC) {
-					var nextSip = preEip;
-					for(i = nextSip.length; i--; ) {
-						++nextSip[i];
-						if(nextSip[i] === 4294967296) {
-							nextSip[i] = 0;
-						} else {
-							break;
-						}
-					}
-					for (i = 0; i < nextSip.length; ++i) {
-						if (sip[i] !== nextSip[i]) {
-							preCC = null;
-							break;
-						}
-					}
-				}
-
-				if (cc !== preCC) {
 					b = Buffer.alloc(bsz);
 					b.fill(0);
 					for (i = 0; i < sip.length; i++) {
 						b.writeUInt32BE(sip[i], i * 4);
 					}
-
 					for (i = 0; i < eip.length; i++) {
 						b.writeUInt32BE(eip[i], 16 + (i * 4));
 					}
-				} else {
-					console.log('SAME!!! ipv6')
-					b = Buffer.alloc(16);
-					b.fill(0);
-					for (i = 0; i < eip.length; i++) {
-						b.writeUInt32BE(eip[i], i * 4);
-					}
-				}
-
 			} else {
 				// IPv4
 				bsz = 10;
-
 				rngip = new Address4(fields[0]);
 				sip = parseInt(rngip.bigInteger(),10);
 				rngip = new Address4(fields[1]);
 				eip = parseInt(rngip.bigInteger(),10);
 
-				if (preEip + 1 !== sip) {
-					preCC = null;
-				}
-				if (cc !== preCC) {
 					b = Buffer.alloc(bsz);
 					b.fill(0);
 					b.writeUInt32BE(sip, 0);
 					b.writeUInt32BE(eip, 4);
-				}	else {
-					console.log('SAME!!! ipv4')
-					b = Buffer.alloc(4);
-					b.fill(0);
-					b.writeUInt32BE(eip, 0);
-				}
 			}
 
-			preEip = eip;
-			if (cc !== preCC) {
 				b.write(cc, bsz - 2);
-				fs.writeSync(datFile, b, 0, bsz, pos);
-				pos += bsz;
+			if(!datFile.write(b)){
+				rl.pause()
+			}
 				preCC = cc;
-			} else {
-				fs.writeSync(datFile, b, 0, bsz < 16 ? 4: 16, pos - bsz + (bsz < 16 ? 4: 16));
-			}
-			if(Date.now() - tstart > 5000) {
-				tstart = Date.now();
-				process.stdout.write('\nStill working (' + lines + ') ...');
-			}
 		}
 	}
 
@@ -527,13 +479,26 @@ function processCountryDataIpLocationDb(src, fileName, srcUrl, cb) {
 		dest = 'geoip-country6.dat';
 	}
 	var dataFile = path.join(dataPath, dest);
-	var tmpDataFile = src
 
 	rimraf(dataFile);
 
 	process.stdout.write('Processing Data (may take a moment) ...');
-	var tstart = Date.now();
-	var datFile = fs.openSync(dataFile, "w");
+	var datFile = fs.createWriteStream(dataFile);
+	var rl = readline.createInterface({
+		input: fs.createReadStream(src),
+		crlfDelay: Infinity
+	})
+	rl.on('line', processLine)
+	rl.on('pause', function(){
+		datFile.once('drain', function(){
+			rl.resume();
+		})
+	})
+	rl.on('close', function(){
+		console.log(' DONE');
+		datFile.end(cb)
+	})
+}
 
 	lazy(fs.createReadStream(tmpDataFile))
 		.lines
@@ -743,8 +708,10 @@ function processData(database, cb) {
 	}
 }
 
-rimraf(tmpPath);
-mkdir(tmpPath);
+if(!isDebug){
+	rimraf(tmpPath);
+	mkdir(tmpPath);
+}
 
 if(ip_location_db){
 	var preUrl = 'https://cdn.jsdelivr.net/npm/@ip-location-db/'+ip_location_db+'-country/'+ip_location_db+'-country'
@@ -783,7 +750,7 @@ if(ip_location_db){
 			process.exit(1);
 		} else {
 			console.log('Successfully Updated Databases from MaxMind.');
-			if (process.argv.indexOf('debug') !== -1) console.log('Notice: temporary files are not deleted for debug purposes.');
+			if (isDebug) console.log('Notice: temporary files are not deleted for debug purposes.');
 			else rimraf(tmpPath);
 			process.exit(0);
 		}
