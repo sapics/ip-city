@@ -1,14 +1,16 @@
-name: Auto dastabase update
+name: v4 auto database update
 on:
   schedule:
-    - cron: '48 21 * * Tue,Fri'
+    - cron: '48 22 * * Tue,Fri'
 jobs:
   release:
-    name: latest version
+    name: v4 version
     runs-on: ubuntu-latest
     steps:
       - name: checkout
         uses: actions/checkout@v4
+        with:
+          ref: v4
       - name: setup Node
         uses: actions/setup-node@v4
         with:
@@ -30,3 +32,4 @@ jobs:
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{secrets.GTOKEN}}
+          branch: v4

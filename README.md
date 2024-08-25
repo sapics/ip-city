@@ -34,8 +34,9 @@ console.log(geo);
 
 ## Installation
 
+```terminal
   $ npm install geoip-country
-
+```
 
 ## API
 
