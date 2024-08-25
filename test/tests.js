@@ -1,7 +1,4 @@
-var timeStart = Date.now();
 var geoip = require('../lib/geoip');
-var timeEnd = Date.now();
-console.log('Startup: %d ms', timeEnd - timeStart);
 
 module.exports = {
 	testLookup: function(test) {
