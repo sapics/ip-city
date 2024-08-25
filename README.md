@@ -2,7 +2,7 @@
 
 Less memory usage version of [geoip-lite](https://github.com/bluesmoon/node-geoip) by limiting to country information.
 This product includes GeoLite2 ipv4 and ipv6 country data which created by MaxMind, available from https://www.maxmind.com.
-The database of this product **updates weekly**.
+The database of this product **updates twice a weekly**.
 
 **You should read this README and the LICENSE and EULA files carefully before deciding to use this product.**<br>
 **After v4, LICENSE for the database was changed. If you need to use this product with previous LICENSE, please use v3.**
@@ -128,6 +128,11 @@ Please carefully read the LICENSE and EULA files. This package comes with certai
 
 You can read [the latest version of GeoLite2 EULA](https://www.maxmind.com/en/geolite2/eula).
 GeoLite2 database is provided under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) by [MaxMind](https://www.maxmind.com/), so, you must create attribusion to [MaxMind](https://www.maxmind.com/) for using GeoLite2 database.
+
+
+The license for the software itself is an Apache License 2.0 by [geoip-country](https://github.com/sapics/geoip-country).
+This software is created from the repository [geoip-lite/node-geoip](https://github.com/geoip-lite/node-geoip).
+The software license of [geoip-lite/node-geoip](https://github.com/geoip-lite/node-geoip) is Apache License 2.0.
 
 
 ## References
