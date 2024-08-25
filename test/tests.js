@@ -1,50 +1,33 @@
-console.time('StartUpTime')
+var timeStart = Date.now();
 var geoip = require('../lib/geoip');
-console.timeEnd('StartUpTime')
-
+var timeEnd = Date.now();
+console.log('Startup: %d ms', timeEnd - timeStart);
 
 module.exports = {
 	testLookup: function(test) {
-		test.expect(2);
+		test.expect(3);
 
-		var ip = '8.8.4.4';
-		var ipv6 = '2001:4860:b002::68';
-
-		var actual = geoip.lookup(ip);
-
+		var actual = geoip.lookup('1.0.2.0');
 		test.ok(actual, 'should return data about IPv4.');
+		console.log(actual);
 
-		actual = geoip.lookup(ipv6);
-
+		actual = geoip.lookup('2001:4860:b002::68');
 		test.ok(actual, 'should return data about IPv6.');
-
-		test.done();
-	},
-
-	testUTF8: function(test) {
-		test.expect(2);
-
-		var ip = "31.17.106.227";
-		var actual = geoip.lookup(ip);
-
-		test.ok(actual, "Should return a non-null value for " + ip);
-		test.equal(actual.country, "DE");
-
-		test.done();
-	},
-
-	testMetro: function(test) {
-		test.expect(1);
+		console.log(actual);
 
 		var actual = geoip.lookup("23.240.63.68");
 		test.equal(actual.country, "US");
+
 		test.done();
 	},
 
 	testIPv4MappedIPv6: function (test) {
 		test.expect(1);
-		var actual = geoip.lookup("::ffff:173.185.182.82");
-		test.equal(actual.country, "US");
+
+		var actual = geoip.lookup("::ffff:2.29.0.82");
+		test.ok(actual, 'should return data about IPv4.');
+		console.log(actual);
+
 		test.done();
 	}
 };

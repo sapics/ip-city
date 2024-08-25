@@ -1,6 +1,6 @@
 {
 	"name": "geoip-country",
-	"version": "4.2.126",
+	"version": "5.0.0",
 	"description": "Less memory usage version of geoip-lite, by supporting only country lookup.",
 	"keywords": [
 		"geo",
@@ -17,7 +17,6 @@
 	"files": [
 		"lib/",
 		"data/",
-		"test/",
 		"scripts/",
 		"LICENSE",
 		"EULA"
@@ -28,19 +27,17 @@
 		"url": "git://github.com/sapics/geoip-country.git"
 	},
 	"engines": {
-		"node": ">=0.6.3"
+		"node": ">=10.20.0"
 	},
 	"scripts": {
 		"test": "nodeunit --reporter=minimal test/tests.js",
 		"updatedb": "node scripts/updatedb.js",
-		"updatedb-debug": "node scripts/updatedb.js debug",
-		"update-package": "node scripts/update-package.js"
+		"updatedb-debug": "node scripts/updatedb.js debug"
 	},
 	"dependencies": {
 		"async": "^2.6.4",
-		"iconv-lite": "^0.5.2",
-		"ip-address": "^6.3.0",
-		"lazy": "^1.0.11",
+		"countries-list": "^3.1.1",
+		"ip-address": "^6.4.0",
 		"yauzl": "^2.10.0"
 	},
 	"config": {

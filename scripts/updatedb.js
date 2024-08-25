@@ -9,42 +9,46 @@ var geodatadir = process.env.npm_config_geodatadir || process.env.GEODATADIR;
 var tmpdatadir = process.env.npm_config_geotmpdatadir || process.env.GEOTMPDATADIR;
 var ip_location_db = process.env.npm_config_ip_location_db || process.env.IP_LOCATION_DB || null;
 var series = process.env.npm_config_series || process.env.GEODBSERIES;
+var language = process.env.npm_config_language || process.env.GEOLITE2_LANGUAGE || 'en';
 var isDebug = process.argv.indexOf('debug') >= 0;
+var addFakeData = process.env.npm_config_fake_data || process.env.FAKE_DATA || false;
 for(var i = 0; i < process.argv.length; ++i){
 	var arg = process.argv[i];
+	if(isDebug) console.log(arg)
 	if(arg.indexOf('license_key=') >= 0 && !license_key){
 		license_key = arg.slice(arg.indexOf('=') + 1);
-	} else if(arg.indexOf('--geodatadir=') === 0 && !geodatadir){
+	} else if(arg.indexOf('geodatadir=') >= 0 && !geodatadir){
 		geodatadir = arg.slice(arg.indexOf('=') + 1);
-	} else if(arg.indexOf('--geotmpdatadir=') === 0 && !tmpdatadir){
+	} else if(arg.indexOf('geotmpdatadir=') >= 0 && !tmpdatadir){
 		tmpdatadir = arg.slice(arg.indexOf('=') + 1);
-	} else if(arg.indexOf('--ip_location_db=') === 0) {
+	} else if(arg.indexOf('ip_location_db=') >= 0) {
 		ip_location_db = arg.slice(arg.indexOf('=') + 1).replace('-country', '');
 	} else if(arg.indexOf('series=') >= 0){
 		series = arg.slice(arg.indexOf('=') + 1);
+	} else if(arg.indexOf('language=') >= 0){
+		language = arg.slice(arg.indexOf('=') + 1);
+	} else if(arg.indexOf('fake_data=') >= 0){
+		addFakeData = true;
 	}
 }
 if(!series){
 	series = 'GeoLite2';
 }
 
-var fs = require('fs');
-var https = require('https');
-var path = require('path');
-var url = require('url');
+const fs = require('fs');
+const https = require('https');
+const path = require('path');
+const url = require('url');
 
-fs.existsSync = fs.existsSync || path.existsSync;
+const isCountry = require('../package.json').name.indexOf('country') > 0
+const async = require('async');
+const readline = require('readline');
+const yauzl = require('yauzl');
+const utils = require('../lib/utils');
+const Address6 = require('ip-address').Address6;
+const Address4 = require('ip-address').Address4;
 
-var async = require('async');
-var iconv = require('iconv-lite');
-var readline = require('readline');
-var lazy = require('lazy');
-var yauzl = require('yauzl');
-var utils = require('../lib/utils');
-var Address6 = require('ip-address').Address6;
-var Address4 = require('ip-address').Address4;
 var dataPath, tmpPath;
-
 function rimraf(dir){
 	try{
 		var dirStat = fs.statSync(dir)
@@ -93,7 +97,7 @@ var databases = [
 		edition: series+'-City-CSV',
 		suffix: 'zip',
 		src: [
-			series+'-City-Locations-en.csv',
+			series+'-City-Locations-' + language + '.csv',
 			series+'-City-Blocks-IPv4.csv',
 			series+'-City-Blocks-IPv6.csv'
 		],
@@ -267,8 +271,12 @@ function extract(tmpFile, tmpFileName, database, cb) {
 	}
 }
 function processLookupCountry(src, cb){
-	var lines=0;
+	var isFirstLine = true;
 	function processLine(line) {
+		if(isFirstLine){
+			isFirstLine = false;
+			return;
+		}
 		var fields = CSVtoArray(line);
 		if (!fields || fields.length < 6) {
 			console.log("weird line: %s::", line);
@@ -279,23 +287,20 @@ function processLookupCountry(src, cb){
 	var tmpDataFile = path.join(tmpPath, src);
 
 	process.stdout.write('Processing Lookup Data (may take a moment) ...');
-	var tstart = Date.now();
 
-	lazy(fs.createReadStream(tmpDataFile))
-		.lines
-		.map(function(byteArray) {
-			return iconv.decode(byteArray, 'latin1');
-		})
-		.skip(1)
-		.map(processLine)
-		.on('pipe', function() {
-			console.log(' DONE');
-			cb();
-		});
+	var rl = readline.createInterface({
+		input: fs.createReadStream(tmpDataFile),
+		crlfDelay: Infinity
+	})
+	rl.on('line', processLine)
+	rl.on('close', function(){
+		console.log(' DONE');
+		cb();
+	})
 }
 
 function processCountryData(src, dest, cb) {
-	var lines = 0, preCC, preB, preEip = 0, isFirstLine = true;
+	var preCC, preB, preEip = 0, isFirstLine = true;
 	function processLine(line) {
 		if(isFirstLine){
 			isFirstLine = false;
@@ -307,7 +312,6 @@ function processCountryData(src, dest, cb) {
 			console.log("weird line: %s::", line);
 			return;
 		}
-		lines++;
 
 		var sip;
 		var eip;
@@ -319,26 +323,20 @@ function processCountryData(src, dest, cb) {
 		if(cc){
 			if (fields[0].match(/:/)) {
 				// IPv6
-				bsz = 34;
+				bsz = 18;
 				rngip = new Address6(fields[0]);
-				sip = utils.aton6(rngip.startAddress().correctForm());
-				eip = utils.aton6(rngip.endAddress().correctForm());
+				sip = utils.aton6n(rngip.startAddress().correctForm());
+				eip = utils.aton6n(rngip.endAddress().correctForm());
 
-				if (cc === preCC) {
-					var nextSip = preEip;
-					for(i = nextSip.length; i--; ) {
-						++nextSip[i];
-						if(nextSip[i] === 4294967296) {
-							nextSip[i] = 0;
-						} else {
-							break;
-						}
+				if(isDebug && preEip){
+					if(preEip === sip) {
+						console.log('same ipv6 country range!!!');
 					}
-					for (i = 0; i < nextSip.length; ++i) {
-						if (sip[i] !== nextSip[i]) {
-							preCC = null;
-							break;
-						}
+				}
+
+				if (cc === preCC && !addFakeData) {
+					if(preEip + 1n !== sip) {
+						preCC = null;
 					}
 				}
 
@@ -346,17 +344,11 @@ function processCountryData(src, dest, cb) {
 					isNew = true
 					b = Buffer.alloc(bsz);
 					b.fill(0);
-					for (i = 0; i < sip.length; i++) {
-						b.writeUInt32BE(sip[i], i * 4);
-					}
-					for (i = 0; i < eip.length; i++) {
-						b.writeUInt32BE(eip[i], 16 + (i * 4));
-					}
+					b.writeBigUInt64BE(sip);
 				} else {
-					for (i = 0; i < eip.length; i++) {
-						preB.writeUInt32BE(eip[i], 16 + (i * 4));
-					}
+					b = preB;
 				}
+				b.writeBigUInt64BE(eip, 8);
 
 			} else {
 				// IPv4
@@ -366,7 +358,7 @@ function processCountryData(src, dest, cb) {
 				sip = parseInt(rngip.startAddress().bigInteger(),10);
 				eip = parseInt(rngip.endAddress().bigInteger(),10);
 
-				if (preEip + 1 !== sip) {
+				if (preEip + 1 !== sip && !addFakeData) {
 					preCC = null;
 				}
 				if (cc !== preCC) {
@@ -389,7 +381,7 @@ function processCountryData(src, dest, cb) {
 				b.write(cc, bsz - 2);
 				preB = b;
 			}
-				preCC = cc;
+			preCC = cc;
 			preEip = eip;
 		}
 	}
@@ -401,11 +393,11 @@ function processCountryData(src, dest, cb) {
 	mkdir(dataFile);
 
 	process.stdout.write('Processing Data (may take a moment) ...');
-	var datFile = fs.createWriteStream(dataFile);
-	var rl = readline.createInterface({ 
-		input: fs.createReadStream(tmpDataFile),
+	var datFile = fs.createWriteStream(dataFile, {highWaterMark: 1024 * 1024});
+	var rl = readline.createInterface({
+		input: fs.createReadStream(tmpDataFile, {highWaterMark: 1024 * 1024}),
 		crlfDelay: Infinity
-		})
+	})
 	rl.on('line', processLine)
 	rl.on('pause', function(){
 		datFile.once('drain', function(){
@@ -413,62 +405,52 @@ function processCountryData(src, dest, cb) {
 		})
 	})
 	rl.on('close', function(){
-			console.log(' DONE');
-			datFile.end(preB,cb);
+		console.log(' DONE');
+		datFile.end(preB, cb);
 	})
 }
 
 function processCountryDataIpLocationDb(src, fileName, srcUrl, cb) {
-	var lines = 0, preCC;
 	function processLine(line) {
 		var fields = line.split(',');
 		if (!fields || fields.length < 3) {
 			console.log("weird line: %s::", line);
 			return;
 		}
-		lines++;
 
 		var sip;
 		var eip;
-		var rngip;
 		var cc = fields[2];
 		var b;
 		var bsz;
-		var i;
 		if(cc){
 			if (src.indexOf('ipv6') > 0) {
 				// IPv6
-				bsz = 34;
-				sip = utils.aton6(fields[0]);
-				eip = utils.aton6(fields[1]);
+				bsz = 18;
+				sip = utils.aton6n(fields[0]);
+				eip = utils.aton6n(fields[1]);
 
-					b = Buffer.alloc(bsz);
-					b.fill(0);
-					for (i = 0; i < sip.length; i++) {
-						b.writeUInt32BE(sip[i], i * 4);
-					}
-					for (i = 0; i < eip.length; i++) {
-						b.writeUInt32BE(eip[i], 16 + (i * 4));
-					}
+				b = Buffer.alloc(bsz);
+				b.fill(0);
+				b.writeBigUInt64BE(sip);
+				b.writeBigUInt64BE(eip, 8);
 			} else {
 				// IPv4
 				bsz = 10;
-				rngip = new Address4(fields[0]);
-				sip = parseInt(rngip.bigInteger(),10);
-				rngip = new Address4(fields[1]);
-				eip = parseInt(rngip.bigInteger(),10);
+				sip = utils.aton4(fields[0]);
+				eip = utils.aton4(fields[1]);
 
-					b = Buffer.alloc(bsz);
-					b.fill(0);
-					b.writeUInt32BE(sip, 0);
-					b.writeUInt32BE(eip, 4);
+				b = Buffer.alloc(bsz);
+				b.fill(0);
+				b.writeUInt32BE(sip, 0);
+				b.writeUInt32BE(eip, 4);
 			}
 
-				b.write(cc, bsz - 2);
+			b.write(cc, bsz - 2);
 			if(!datFile.write(b)){
 				rl.pause()
 			}
-				preCC = cc;
+			preCC = cc;
 		}
 	}
 
@@ -483,9 +465,9 @@ function processCountryDataIpLocationDb(src, fileName, srcUrl, cb) {
 	rimraf(dataFile);
 
 	process.stdout.write('Processing Data (may take a moment) ...');
-	var datFile = fs.createWriteStream(dataFile);
+	var datFile = fs.createWriteStream(dataFile, {highWaterMark: 1024 * 1024});
 	var rl = readline.createInterface({
-		input: fs.createReadStream(src),
+		input: fs.createReadStream(src, {highWaterMark: 1024 * 1024}),
 		crlfDelay: Infinity
 	})
 	rl.on('line', processLine)
@@ -500,23 +482,56 @@ function processCountryDataIpLocationDb(src, fileName, srcUrl, cb) {
 	})
 }
 
-	lazy(fs.createReadStream(tmpDataFile))
-		.lines
-		.map(function(byteArray) {
-			return iconv.decode(byteArray, 'latin1');
-		})
-		.map(processLine)
-		.on('pipe', function() {
-			console.log(' DONE (lines: ' + lines + ')');
-			fs.closeSync(datFile);
-			cb();
-		});
+var isPostNumReg = /^\d+$/;
+var isPostNumReg2 = /^(\d+)[-\s](\d+)$/;
+var isPostStrReg = /^([A-Z\d]+)$/;
+var isPostStrReg2 = /^([A-Z\d]+)[-\s]([A-Z\d]+)$/;
+function postcodeDatabase(postcode){
+	if(isPostNumReg.test(postcode)){
+		return [postcode.length, // 1~8
+						parseInt(postcode, 10)
+					];
+	}
+	var r = isPostNumReg2.exec(postcode);
+	if(r){
+		return [
+			parseInt(r[1].length + '' + r[2].length, 10), // 11~77
+			parseInt(r[1] + r[2], 10)
+		]
+	}
+	r = isPostStrReg.exec(postcode);
+	if(r){
+		var num = parseInt(postcode, 36)
+		if(num < Math.pow(2, 32)){
+			return [
+				0,
+				num
+			]
+		} else {
+			var num1 = parseInt(postcode.slice(0, 3), 36)
+			var num2 = parseInt(postcode.slice(3), 36)
+			return [
+				num1, // Big Integer
+				num2, // 3 digits
+			]
+		}
+	}
+
+	r = isPostStrReg2.exec(postcode);
+	var num1 = - parseInt(r[1].length + "" + r[2].length, 36)// minus
+	var num2 = parseInt(r[1] + r[2], 36)
+	return [
+		num1,
+		num2
+	]
 }
 
 function processCityData(src, dest, cb) {
-	var lines = 0;
+	var isFirstLine = true;
+	var preLocId, preB, preEip = 0, preLat, preLon, prePostcode;
 	function processLine(line) {
-		if (line.match(/^Copyright/) || !line.match(/\d/)) {
+		if(isFirstLine){
+			isFirstLine = false;
 			return;
 		}
 
@@ -533,70 +548,95 @@ function processCityData(src, dest, cb) {
 		var bsz;
 		var lat;
 		var lon;
-		var area;
-
+		var postcode;
 		var i;
+		var isNew = true;
 
-		lines++;
+		locId = parseInt(fields[1], 10);
+		locId = cityLookup[locId];
+		lat = Math.round(parseFloat(fields[7]) * 10000);
+		lon = Math.round(parseFloat(fields[8]) * 10000);
+		postcode = fields[6] && postcodeDatabase(fields[6])
+
+		if(preLocId === locId && preLat === lat && preLon === lon && prePostcode[0] === postcode[0] && prePostcode[1] === postcode[1]){
+			isNew = false;
+		}
 
 		if (fields[0].match(/:/)) {
 			// IPv6
-			var offset = 0;
-			bsz = 48;
+			bsz = 34;
 			rngip = new Address6(fields[0]);
-			sip = utils.aton6(rngip.startAddress().correctForm());
-			eip = utils.aton6(rngip.endAddress().correctForm());
-			locId = parseInt(fields[1], 10);
-			locId = cityLookup[locId];
+			sip = utils.aton6n(rngip.startAddress().correctForm());
+			eip = utils.aton6n(rngip.endAddress().correctForm());
 
-			b = Buffer.alloc(bsz);
-			b.fill(0);
-
-			for (i = 0; i < sip.length; i++) {
-				b.writeUInt32BE(sip[i], offset);
-				offset += 4;
+			if(isDebug && preEip){
+				if(preEip === sip) {
+					console.log('same ipv6 city range!!!');
+				}
 			}
 
-			for (i = 0; i < eip.length; i++) {
-				b.writeUInt32BE(eip[i], offset);
-				offset += 4;
+			if(!isNew && !addFakeData){
+				if(preEip + 1n !== sip){
+					isNew = true;
+				}
 			}
-			b.writeUInt32BE(locId>>>0, 32);
+			if(isNew){
+				b = Buffer.alloc(bsz);
+				b.fill(0);
+				b.writeBigUInt64BE(sip);
+				b.writeBigUInt64BE(eip, 8);
 
-			lat = Math.round(parseFloat(fields[7]) * 10000);
-			lon = Math.round(parseFloat(fields[8]) * 10000);
-			area = parseInt(fields[9], 10);
-			b.writeInt32BE(lat,36);
-			b.writeInt32BE(lon,40);
-			b.writeInt32BE(area,44);
+				b.writeUInt32BE(locId>>>0, 16);
+				b.writeInt32BE(lat,20);
+				b.writeInt32BE(lon,24);
+				b.writeInt16BE(postcode[0], 28) // postcode pre [2 bytes]
+				b.writeUInt32BE(postcode[1], 30) // postcode [4 bytes]
+			} else {
+				preB.writeBigUInt64BE(eip, 8);
+			}
 		} else {
 			// IPv4
-			bsz = 24;
+			bsz = 26;
 
 			rngip = new Address4(fields[0]);
 			sip = parseInt(rngip.startAddress().bigInteger(),10);
 			eip = parseInt(rngip.endAddress().bigInteger(),10);
-			locId = parseInt(fields[1], 10);
-			locId = cityLookup[locId];
-			b = Buffer.alloc(bsz);
-			b.fill(0);
-			b.writeUInt32BE(sip>>>0, 0);
-			b.writeUInt32BE(eip>>>0, 4);
-			b.writeUInt32BE(locId>>>0, 8);
 
-			lat = Math.round(parseFloat(fields[7]) * 10000);
-			lon = Math.round(parseFloat(fields[8]) * 10000);
-			area = parseInt(fields[9], 10);
-			b.writeInt32BE(lat,12);
-			b.writeInt32BE(lon,16);
-			b.writeInt32BE(area,20);
+			if(!isNew && !addFakeData){
+				if(preEip + 1 !== sip){
+					isNew = true;
+				}
+			}
+			if(isNew){
+				locId = parseInt(fields[1], 10);
+				locId = cityLookup[locId];
+				b = Buffer.alloc(bsz);
+				b.fill(0);
+				b.writeUInt32BE(sip>>>0, 0); // ip start [4 bytes]
+				b.writeUInt32BE(eip>>>0, 4); // ip end [4 bytes]
+				b.writeUInt32BE(locId>>>0, 8); // location id [4 bytes]
+				b.writeInt32BE(lat,12); // latitude [4 bytes]
+				b.writeInt32BE(lon,16); // longitude [4 bytes]
+				b.writeInt16BE(postcode[0], 20) // postcode pre [2 bytes]
+				b.writeUInt32BE(postcode[1], 22) // postcode [4 bytes]
+			} else {
+				preB.writeUInt32BE(eip>>>0, 4);
+			}
 		}
 
-		fs.writeSync(datFile, b, 0, b.length, null);
-		if(Date.now() - tstart > 5000) {
-			tstart = Date.now();
-			process.stdout.write('\nStill working (' + lines + ') ...');
+		if(isNew){
+			if(preB){
+				if(!datFile.write(preB)){
+					rl.pause();
+				}
+			}
+			preB = b;
 		}
+		preLocId = locId;
+		preLat = lat;
+		preLon = lon;
+		prePostcode = postcode;
+		preEip = eip;
 	}
 
 	var dataFile = path.join(dataPath, dest);
@@ -605,29 +645,89 @@ function processCityData(src, dest, cb) {
 	rimraf(dataFile);
 
 	process.stdout.write('Processing Data (may take a moment) ...');
-	var tstart = Date.now();
-	var datFile = fs.openSync(dataFile, "w");
-
-	lazy(fs.createReadStream(tmpDataFile))
-		.lines
-		.map(function(byteArray) {
-			return iconv.decode(byteArray, 'latin1');
+	var datFile = fs.createWriteStream(dataFile, {highWaterMark: 1024 * 1024})
+	var rl = readline.createInterface({
+		input: fs.createReadStream(tmpDataFile, {highWaterMark: 1024 * 1024}),
+		crlfDelay: Infinity
+	})
+	rl.on('line', processLine)
+	rl.on('pause', function(){
+		datFile.once('drain', function(){
+			rl.resume();
 		})
-		.skip(1)
-		.map(processLine)
-		.on('pipe', cb);
+	})
+	rl.on('close', function(){
+		console.log(' DONE');
+		datFile.end(preB, cb)
+	})
+}
+
+var subDatabase1 = {}, subCount1 = 0, subDatabase2 = {}, subCount2 = 0, timezoneDatabase = {}, timezoneCount = 0
+function makeTimezoneDatabase(timezone){
+	if(timezoneDatabase[timezone]) return timezoneDatabase[timezone];
+	return timezoneDatabase[timezone] = ++timezoneCount;
+}
+function makeSubDatabase(cc, sub1_code, sub2_code, sub1_name, sub2_name){
+	if(!sub1_code) return [];
+	var code = cc + '.' + sub1_code;
+	var indexes = []
+	if(!subDatabase1[code]){
+		subDatabase1[code] = [sub1_name, ++subCount1]
+	}
+	indexes.push(subDatabase1[code][1])
+
+	if(sub2_code){
+		code += '.' + sub2_code;
+		if(!subDatabase2[code]){
+			subDatabase2[code] = [sub2_name, ++subCount2]
+		}
+		indexes.push(subDatabase2[code][1])
+	}
+	return indexes;
+}
+var cityDatabase = {}, cityCount = 0;
+function makeCityDatabase(city){
+	if(cityDatabase[city]) return cityDatabase[city];
+	return cityDatabase[city] = ++cityCount;
+}
+
+var enDatabase = {}, enDatabaseCreated = false
+function processCityDataNamesEn(src, dest, cb) {
+	var tmpDataFile = path.join(tmpPath, src.replace(/Locations-(.*)\.csv$/, 'Locations-en.csv'));
+	function processLine(line) {
+		var fields = CSVtoArray(line);
+		var locId = parseInt(fields[0]);
+		if(locId > 0){
+			enDatabase[locId] = fields;
+		}
+	}
+	var rl = readline.createInterface({
+		input: fs.createReadStream(tmpDataFile),	
+		crlfDelay: Infinity
+	});
+	rl.on('line', processLine)
+	rl.on('close', function(){
+		console.log(' DONE');
+		enDatabaseCreated = true
+		processCityDataNames(src, dest, cb);
+	})
 }
 
 function processCityDataNames(src, dest, cb) {
+	if(!enDatabaseCreated && src.indexOf('-en') === -1){
+		return processCityDataNamesEn(src, dest, cb);
+	}
+
 	var locId = null;
-	var linesCount = 0;
-	function processLine(line, i, a) {
-		if (line.match(/^Copyright/) || !line.match(/\d/)) {
+	var linesCount = 0, isFirstLine = true;
+	function processLine(line) {
+		if(isFirstLine){
+			isFirstLine = false;
 			return;
 		}
 
 		var b;
-		var sz = 88;
+		var sz = 14;
 		var fields = CSVtoArray(line);
 		if (!fields) {
 			//lot's of cities contain ` or ' in the name and can't be parsed correctly with current method
@@ -637,29 +737,43 @@ function processCityDataNames(src, dest, cb) {
 
 		locId = parseInt(fields[0]);
 
-		cityLookup[locId] = linesCount;
+		cityLookup[locId] = linesCount++;
+
+		var enFields = enDatabase[locId] || [];
 		var cc = fields[4];
-		var rg = fields[6];
-		var city = fields[10];
-		var metro = parseInt(fields[11]);
-		//other possible fields to include
-		var tz = fields[12];
-		var eu = fields[13];
+		var sub1_code = fields[6];
+		var sub2_code = fields[8];
+		var city = fields[10] || enFields[10];
+		var metro = parseInt(fields[11] || enFields[11], 10);
+		var tz = fields[12] || enFields[12];
+		var subIndexes = []
+
+		if(sub1_code){
+			subIndexes = makeSubDatabase(cc, sub1_code, sub2_code, fields[7]||enFields[7], fields[9]||enFields[9]);
+		}
 
 		b = Buffer.alloc(sz);
 		b.fill(0);
-		b.write(cc, 0);//country code
-		b.write(rg, 2);//region
-
-		if(metro) {
-			b.writeInt32BE(metro, 5);
+		b.write(cc, 0);//country code [2 bytes]
+		if(subIndexes.length){
+			b.writeUInt16BE(subIndexes[0], 2);//subdivision code index[2 bytes]
+			if(subIndexes.length > 1){
+				b.writeUInt16BE(subIndexes[1], 4);//subdivision code index[2 bytes]
+			}
 		}
-		b.write(eu,9);//is in eu
-		b.write(tz,10);//timezone
-		b.write(city, 34);//cityname
+		if(metro) {
+			b.writeUInt16BE(metro, 6); // metro code [2 bytes]
+		}
+		if(city){
+			b.writeUInt32BE(makeCityDatabase(city), 8);//cityname index [4 bytes]
+		}
+		if(tz){
+			b.writeUInt16BE(makeTimezoneDatabase(tz), 12);//timezone [2 byte]
+		}
 
-		fs.writeSync(datFile, b, 0, b.length, null);
-		linesCount++;
+		if(!datFile.write(b)){
+			rl.pause();
+		}
 	}
 
 	var dataFile = path.join(dataPath, dest);
@@ -667,16 +781,55 @@ function processCityDataNames(src, dest, cb) {
 
 	rimraf(dataFile);
 
-	var datFile = fs.openSync(dataFile, "w");
-
-	lazy(fs.createReadStream(tmpDataFile))
-		.lines
-		.map(function(byteArray) {
-			return iconv.decode(byteArray, 'utf-8');
+	var datFile = fs.createWriteStream(dataFile, {highWaterMark: 1024 * 1024})
+	var rl = readline.createInterface({
+		input: fs.createReadStream(tmpDataFile, {highWaterMark: 1024 * 1024}),	
+		crlfDelay: Infinity
+	})
+	rl.on('line', processLine)
+	rl.on('pause', function(){
+		datFile.once('drain', function(){
+			rl.resume();
 		})
-		.skip(1)
-		.map(processLine)
-		.on('pipe', cb);
+	})
+	rl.on('close', function(){
+		console.log(' DONE');
+		enDatabase = null;
+
+		var tmpSub1 = []
+		for(var key in subDatabase1){
+			tmpSub1[subDatabase1[key][1]] = subDatabase1[key][0]
+		}
+		fs.writeFileSync(path.join(dataPath, 'geoip-city-sub1.json'), JSON.stringify(tmpSub1));
+		tmpSub1.length = 0;
+		subDatabase1 = null;
+
+		var tmpSub2 = []
+		for(var key in subDatabase2){
+			tmpSub2[subDatabase2[key][1]] = subDatabase2[key][0]
+		}
+		fs.writeFileSync(path.join(dataPath, 'geoip-city-sub2.json'), JSON.stringify(tmpSub2));
+		tmpSub2.length = 0;
+		subDatabase2 = null;
+
+		var tmpCity = []
+		for(var key in cityDatabase){
+			tmpCity[cityDatabase[key]] = key
+		}
+		fs.writeFileSync(path.join(dataPath, 'geoip-city.json'), JSON.stringify(tmpCity));
+		tmpCity.length = 0;
+		cityDatabase = null;
+
+		var tmpTimezone = []
+		for(var key in timezoneDatabase){
+			tmpTimezone[timezoneDatabase[key]] = key
+		}
+		fs.writeFileSync(path.join(dataPath, 'geoip-city-timezone.json'), JSON.stringify(tmpTimezone));
+		tmpTimezone.length = 0;
+		timezoneDatabase = null;
+
+		datFile.end(cb)
+	})
 }
 
 function processData(database, cb) {
@@ -728,22 +881,31 @@ if(ip_location_db){
 				process.exit(1);
 			}
 			console.log('Successfully Updated Database.');
-//			rimraf(tmpPath);
 			process.exit(0);
 		});
 	})
 } else {
-	if (!license_key || license_key === "true") {
-		console.log('No GeoLite2 License Key Provided, Please Provide Argument: `--license_key=`');
-		process.exit(1);
+	if(!isDebug){
+		if (!license_key || license_key === "true") {
+			console.log('No GeoLite2 License Key Provided, Please Provide Argument: `--license_key=`');
+			process.exit(1);
+		}
 	}
 
 	console.log('Fetching new databases from MaxMind...');
 	console.log('Storing files at ' + dataPath);
 	
 	async.eachSeries(databases, function(database, nextDatabase) {
-		if (database.type.indexOf('city') !== -1) return nextDatabase();
-		async.seq(fetch, extract, processData)(database, nextDatabase);
+		if(isDebug){
+			async.seq(processData)(database, nextDatabase);
+		} else {
+			if(isCountry){
+				if(database.type !== 'country') return nextDatabase();
+			} else {
+				if(database.type === 'country') return nextDatabase();
+			}
+			async.seq(fetch, extract, processData)(database, nextDatabase);
+		}
 	}, function(err) {
 		if (err) {
 			console.log('Failed to Update Databases from MaxMind.');

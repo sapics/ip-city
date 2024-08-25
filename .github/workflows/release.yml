@@ -15,23 +15,18 @@ jobs:
           node-version: 20.x
           registry-url: 'https://registry.npmjs.org'
       - name: install dependencies
-        run: |
-          npm i
+        run: npm i
       - name: update
-        run: |
-          npm run-script updatedb
-          npm run-script update-package
+        run: npm run-script updatedb
         env:
           GEOLITE2_LICENSE_KEY: ${{secrets.GEOLITE2_LICENSE_KEY}}
       - name: test
         run: npm run test
       - name: commit
         run: scripts/release.sh
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: push changes
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{secrets.GTOKEN}}
-      - name: release
-        run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
