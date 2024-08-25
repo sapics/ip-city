@@ -231,6 +231,7 @@ function downloadDatabase(database, cb) {
 				sha256 += chunk;
 			});
 			response.on('end', function() {
+				sha256 = sha256.trim().replace(/\s+[^\s]+$/, '')
 				if(!sha256){
 					console.log('ERROR to CHECK sha256');
 					process.exit(1);
