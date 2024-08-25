@@ -217,28 +217,36 @@ function downloadDatabase(database, cb) {
 			process.exit(1);
 		}
 
-		var tmpFileStream = fs.createWriteStream(tmpFile, {highWaterMark: 1024 * 1024});
-		var tmpFilePipe = response.pipe(tmpFileStream);
-
-		tmpFilePipe.on('close', function() {
-			console.log(' DOWNLOAD DONE', fileName);
-			if(typeof database === 'string' || database.suffix === 'zip') {
+		if(typeof database === 'string' || database.suffix === 'zip') {
+			var tmpFileStream = fs.createWriteStream(tmpFile, {highWaterMark: 1024 * 1024});
+			response.pipe(tmpFileStream).on('close', function() {
+				console.log(' DOWNLOAD DONE', fileName);
 				cb(null, tmpFile, fileName, database);
-			} else {
-				var oldSha256 = fs.readFileSync(path.join(dataPath, fileName)).trim();
-				var newSha256 = fs.readFileSync(tmpFile).trim();
-				if(oldSha256 !== newSha256){
-					database.suffix = database.suffix.replace('.sha256', '');
-					fs.writeFileSync(path.join(dataPath, fileName), newSha256);
-					downloadDatabase(database, cb);
-				} else {
-					console.log('Already up to date');
-					cb(new Error('Already up to date'));
+			});
+		} else {
+			var oldSha256 = fs.readFileSync(path.join(dataPath, fileName), 'utf8');
+
+			var sha256 = '';
+			response.on('data', function(chunk) {
+				sha256 += chunk;
+			});
+			response.on('end', function() {
+				if(!sha256){
+					console.log('ERROR to CHECK sha256');
+					process.exit(1);
 				}
-			}
-		});
+				if(oldSha256 === sha256){
+					console.log('Already up to date');
+					return cb(new Error('Already up to date'));
+				}
+				database.suffix = database.suffix.replace('.sha256', '');
+				fs.writeFileSync(path.join(dataPath, fileName), sha256);
+				downloadDatabase(database, cb);
+			})
+		}
 	}
 
+	mkdir(tmpFile);
 	var client = https.get(getOptions(), onResponse);
 
 	process.stdout.write('Retrieving ' + fileName + ' ...');

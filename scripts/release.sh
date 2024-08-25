@@ -9,3 +9,5 @@ if [ -z "$RES1" ]; then
 		git add data/*.sha256
 		git add data/*.json
 		git commit -a -m "v${VERT} auto update ip database"
+	fi
+fi
