@@ -2,6 +2,8 @@
 
 Less memory usage version of [geoip-lite](https://github.com/bluesmoon/node-geoip) by limiting to country information.
 This product includes GeoLite2 ipv4 and ipv6 country data which created by MaxMind, available from https://www.maxmind.com.
+After v5, this library uses less than 12MB memory.
+`geoip-lite` uses over 120MB memory and `geoip-country` v4.2.124 which uses over 17MB memory.
 The database of this product **updates twice a weekly**.
 
 **You should read this README and the LICENSE and EULA files carefully before deciding to use this product.**<br>
@@ -34,14 +36,16 @@ console.log(geo);
 
 ## Installation
 
-```terminal
-  $ npm install geoip-country
+```bash
+$ npm i geoip-country
 ```
+
 
 ## API
 
 geoip-country is completely synchronous.  There are no callbacks involved.  All blocking file IO is done at startup time, so all runtime
 calls are executed in-memory and are fast.  Startup may take up to 20ms while it reads into memory and indexes data files.
+
 
 ### Looking up an IP address ###
 
