@@ -17,24 +17,24 @@ var ip = "207.97.227.239";
 var geo = geoip.lookup(ip);
 
 console.log(geo);
-{ range: [ 3479299040, 3479299071 ],
-  country: 'US'}
+{
+  country_code: 'US', // "2 letter" ISO-3166-1 alpha-2 country code
+  country: 'US',      // alias of country_code
+  country_name: 'United States',
+  country_name_native: 'United States',
+  phone: [ 1 ],
+  continent: 'NA',
+  capital: 'Washington D.C.',
+  currency: [ 'USD', 'USN', 'USS' ],
+  languages: [ 'en' ],
+  continent_name: 'North America'
+}
 ```
 
 
 ## Installation
 
-### 1. Install the library
-
-    $ npm install geoip-country
-
-### 2. Update MaxMind's geoip data
-
-    $ npm run-script updatedb --license_key=YOUR_GEOLITE2_LICENSE_KEY
-		or
-    $ GEOLITE2_LICENSE_KEY=YOUR_GEOLITE2_LICENSE_KEY node scripts/updatedb.js
-
-_YOUR_GEOLITE2_LICENSE_KEY should be replaced by a valid GeoLite2 license key. Please [follow instructions](https://dev.maxmind.com/geoip/geoip2/geolite2/) provided by MaxMind to obtain a license key._
+  $ npm install geoip-country
 
 
 ## API
@@ -56,37 +56,41 @@ If the IP address was found, the `lookup` method returns an object with the foll
 
 ```javascript
 {
-   range: [ <low bound of IP block>, <high bound of IP block> ],
-   country: 'XX' // 2 letter ISO-3166-1 country code
+  country_code: 'CN',
+  country: 'CN',
+  country_name: 'China',
+  country_native_name: '中国'
+  phone: [ 86 ],
+  capital: 'Beijing',
+  currency: [ 'CNY' ],
+  languages: [ 'zh' ],
+  continent: 'AS',
+  continent_name: 'Asia',
 }
 ```
 
-The actual values for the `range` array depend on whether the IP is IPv4 or IPv6 and should be
-considered internal to `geoip-country`.  To get a human readable format, pass them to `geoip.pretty()`
-
 If the IP address was not found, the `lookup` returns `null`
+
+We use two databases. One is `geolite2 country database` for linking `ip address` to `country_code`.
+Second database is [Countries](https://github.com/annexare/Countries) database which is published under MIT License for linking `country_code` to `country_name`, `capital`, `continent`, etc.
+
 
 ### Update database API [Added at v4.1.0]
 
 You can update country database with `updateDatabase` method.
 
 ```javascript
-    geoip.updateDatabase(license_key, callback);
+  geoip.updateDatabase(license_key, callback);
 ```
 
-`license_key` is a license key which provided by MaxMind. You can get GeoLite2 license key as [instructions](https://dev.maxmind.com/geoip/geoip2/geolite2/).
+`license_key` is a license key which provided by MaxMind.
+You can get GeoLite2 license key as [instructions](https://dev.maxmind.com/geoip/geoip2/geolite2/).
 
-### Pretty printing an IP address ###
-
-If you have a 32 bit unsigned integer, or a number returned as part of the `range` array from the `lookup` method,
-the `pretty` method can be used to turn it into a human readable string.
+By setting the environmental variable `GEOLITE2_LICENSE_KEY`, you can update with
 
 ```javascript
-    console.log("The IP is %s", geoip.pretty(ip));
+  geoip.updateDatabase(callback);
 ```
-
-This method returns a string if the input was in a format that `geoip-country` can recognize, else it returns the
-input itself.
 
 
 ## Built-in Updater
@@ -140,3 +144,4 @@ The software license of [geoip-lite/node-geoip](https://github.com/geoip-lite/no
   - <a href="https://www.maxmind.com/app/iso3166">Documentation from MaxMind</a>
   - <a href="https://en.wikipedia.org/wiki/ISO_3166">ISO 3166 (1 & 2) codes</a>
   - <a href="https://en.wikipedia.org/wiki/List_of_FIPS_region_codes">FIPS region codes</a>
+  - <a href="https://github.com/annexare/Countries">annexare/Countries</a>
