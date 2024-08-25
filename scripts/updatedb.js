@@ -80,7 +80,7 @@ var databases = [
 	{
 		type: 'country',
 		edition: series+'-Country-CSV',
-		suffix: 'zip',
+		suffix: 'zip.sha256',
 		src: [
 			series+'-Country-Locations-en.csv',
 			series+'-Country-Blocks-IPv4.csv',
@@ -95,7 +95,7 @@ var databases = [
 	{
 		type: 'city',
 		edition: series+'-City-CSV',
-		suffix: 'zip',
+		suffix: 'zip.sha256',
 		src: [
 			series+'-City-Locations-' + language + '.csv',
 			series+'-City-Blocks-IPv4.csv',
@@ -163,13 +163,14 @@ function CSVtoArray(text) {
 	return a;
 };
 
-
-function fetch(database, cb) {
+function downloadDatabase(database, cb) {
 	var downloadUrl, fileName;
 	if(typeof database === 'string') {
+		// for ip-location-db
 		downloadUrl = database;
 		fileName = path.basename(downloadUrl);
 	} else {
+		// for maxmind
 		downloadUrl = download_server + '?edition_id=' + database.edition + '&suffix=' + database.suffix + "&license_key=" + encodeURIComponent(license_key);
 		fileName = database.edition + '.' + database.suffix;
 		console.log('Fetching edition ' + database.edition + ' from ' + download_server);
@@ -216,16 +217,27 @@ function fetch(database, cb) {
 			process.exit(1);
 		}
 
-		var tmpFileStream = fs.createWriteStream(tmpFile);
+		var tmpFileStream = fs.createWriteStream(tmpFile, {highWaterMark: 1024 * 1024});
 		var tmpFilePipe = response.pipe(tmpFileStream);
 
 		tmpFilePipe.on('close', function() {
-			console.log(' DONE');
-			cb(null, tmpFile, fileName, database);
+			console.log(' DOWNLOAD DONE', fileName);
+			if(typeof database === 'string' || database.suffix === 'zip') {
+				cb(null, tmpFile, fileName, database);
+			} else {
+				var oldSha256 = fs.readFileSync(path.join(dataPath, fileName)).trim();
+				var newSha256 = fs.readFileSync(tmpFile).trim();
+				if(oldSha256 !== newSha256){
+					database.suffix = database.suffix.replace('.sha256', '');
+					fs.writeFileSync(path.join(dataPath, fileName), newSha256);
+					downloadDatabase(database, cb);
+				} else {
+					console.log('Already up to date');
+					cb(new Error('Already up to date'));
+				}
+			}
 		});
 	}
-
-	mkdir(tmpFile);
 
 	var client = https.get(getOptions(), onResponse);
 
@@ -870,12 +882,12 @@ if(ip_location_db){
 	var preUrl = 'https://cdn.jsdelivr.net/npm/@ip-location-db/'+ip_location_db+'-country/'+ip_location_db+'-country'
 	var ipv4Url = preUrl+'-ipv4.csv'
 	var ipv6Url = preUrl+'-ipv6.csv'
-	async.seq(fetch, processCountryDataIpLocationDb)(ipv4Url, function(err){
+	async.seq(downloadDatabase, processCountryDataIpLocationDb)(ipv4Url, function(err){
 		if(err){
 			console.log('Failed to Update Databases ip-location-db/' + ip_location_db);
 			process.exit(1);
 		}
-		async.seq(fetch, processCountryDataIpLocationDb)(ipv6Url, function(err){
+		async.seq(downloadDatabase, processCountryDataIpLocationDb)(ipv6Url, function(err){
 			if(err){
 				console.log('Failed to Update Databases ip-location-db/' + ip_location_db);
 				process.exit(1);
@@ -904,7 +916,7 @@ if(ip_location_db){
 			} else {
 				if(database.type === 'country') return nextDatabase();
 			}
-			async.seq(fetch, extract, processData)(database, nextDatabase);
+			async.seq(downloadDatabase, extract, processData)(database, nextDatabase);
 		}
 	}, function(err) {
 		if (err) {
