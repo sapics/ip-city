@@ -707,7 +707,7 @@ function processCityData(src, dest, cb) {
 }
 
 var subDatabase1 = {}, subCount1 = 0, subDatabase2 = {}, subCount2 = 0, timezoneDatabase = {}, timezoneCount = 0
-var subCodeDatabase = {};
+var subCodeDatabase1 = {}, subCodeDatabase2 = {};
 function makeTimezoneDatabase(timezone){
 	if(timezoneDatabase[timezone]) return timezoneDatabase[timezone];
 	return timezoneDatabase[timezone] = ++timezoneCount;
@@ -718,7 +718,7 @@ function makeSubDatabase(cc, sub1_code, sub2_code, sub1_name, sub2_name){
 	var indexes = []
 	if(!subDatabase1[code]){
 		subDatabase1[code] = [sub1_name, ++subCount1]
-		subCodeDatabase[code] = [sub1_code, subCount1]
+		subCodeDatabase1[code] = [sub1_code, subCount1]
 	}
 	indexes.push(subDatabase1[code][1])
 
@@ -726,6 +726,7 @@ function makeSubDatabase(cc, sub1_code, sub2_code, sub1_name, sub2_name){
 		code += '.' + sub2_code;
 		if(!subDatabase2[code]){
 			subDatabase2[code] = [sub2_name, ++subCount2]
+			subCodeDatabase2[code] = [sub2_code, subCount2]
 		}
 		indexes.push(subDatabase2[code][1])
 	}
@@ -842,39 +843,39 @@ function processCityDataNames(src, dest, cb) {
 		console.log(' DONE');
 		enDatabase = null;
 
+		var hash = {}
 		var tmpSub1 = [], tmpSub2 = []
 		for(var key in subDatabase1){
 			tmpSub1[subDatabase1[key][1]] = subDatabase1[key][0]
-			tmpSub2[subDatabase1[key][1]] = subCodeDatabase[key][0]
+			tmpSub2[subDatabase1[key][1]] = subCodeDatabase1[key][0]
 		}
-		fs.writeFileSync(path.join(dataPath, 'geoip-city-sub1.json'), JSON.stringify(tmpSub1));
-		fs.writeFileSync(path.join(dataPath, 'geoip-city-sub1-code.json'), JSON.stringify(tmpSub2));
-		tmpSub1.length = tmpSub2.length = 0;
-		subDatabase1 = subCodeDatabase = null;
+		hash.state1 = tmpSub1, hash.region1 = tmpSub2
+		subDatabase1 = subCodeDatabase1 = null;
 
+		tmpSub1 = [], tmpSub2 = []
 		for(var key in subDatabase2){
 			tmpSub2[subDatabase2[key][1]] = subDatabase2[key][0]
+			tmpSub2[subDatabase2[key][1]] = subCodeDatabase2[key][0]
 		}
-		fs.writeFileSync(path.join(dataPath, 'geoip-city-sub2.json'), JSON.stringify(tmpSub2));
-		tmpSub2.length = 0;
-		subDatabase2 = null;
+		hash.state2 = tmpSub2, hash.region2 = tmpSub2
+		subDatabase2 = subCodeDatabase2 = null;
 
 		var tmpCity = []
 		for(var key in cityDatabase){
 			tmpCity[cityDatabase[key]] = key
 		}
-		fs.writeFileSync(path.join(dataPath, 'geoip-city.json'), JSON.stringify(tmpCity));
-		tmpCity.length = 0;
+		hash.city = tmpCity
 		cityDatabase = null;
 
 		var tmpTimezone = []
 		for(var key in timezoneDatabase){
 			tmpTimezone[timezoneDatabase[key]] = key
 		}
-		fs.writeFileSync(path.join(dataPath, 'geoip-city-timezone.json'), JSON.stringify(tmpTimezone));
-		tmpTimezone.length = 0;
+		hash.timezone = tmpTimezone
 		timezoneDatabase = null;
 
+		fs.writeFileSync(path.join(dataPath, 'geoip-city-sub.json'), JSON.stringify(hash), 'utf8');
+		tmpSub1 = tmpSub2 = tmpCity = tmpTimezone = null;
 		datFile.end(cb)
 	})
 }
