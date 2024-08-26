@@ -1,11 +1,11 @@
 # geoip-country [![NPM version](https://badge.fury.io/js/geoip-country.svg)](https://badge.fury.io/js/geoip-country)
 
-A native nodejs API to get country information from `ip-address`.
+A native nodejs API to get country information from ip address.
 
 This library is fork of the [geoip-lite](https://github.com/bluesmoon/node-geoip) which provides a very fast ip to geolocation API by loading the ip to geolocation database into memory.
 However, because the database contains city and coordinate information, etc., its size exceeds 120 MB, which means that it uses a lot of memory and takes a long time before the first execution.
 
-`geoip-country` reduces memory usage and speeds up startup and faster lookup by limiting database from geolocation information to country information.
+`geoip-country` reduces memory usage and faster startup and faster lookup by restricting database to country from geolocation.
 Futhermore, we add the other information `capital`, `continent_name`, `languages`, etc., from v5.
 You can check the `test/benchmark.js` after updating `geoip-lite` database.
 
@@ -13,6 +13,7 @@ You can check the `test/benchmark.js` after updating `geoip-lite` database.
 | ---- | ---- | ---- |  ---- | 
 | geoip-country | 7 MB  | 13 ms | 0.00123 ms/ip |
 | geoip-lite    | 124MB | 52 ms | 0.00237 ms/ip |
+
 
 This product includes GeoLite2 ipv4 and ipv6 country data created by [MaxMind](http://maxmind.com/).
 The database of this product **updates twice a weekly**.

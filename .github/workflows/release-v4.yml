@@ -1,7 +1,7 @@
 name: v4 auto database update
 on:
   schedule:
-    - cron: '48 22 * * Tue,Fri'
+    - cron: '58 22 * * Tue,Fri'
 jobs:
   release:
     name: v4 version
