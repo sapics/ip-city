@@ -8,12 +8,6 @@ var geoipLite = require('geoip-lite');
 var t4 =+ new Date();
 
 var utils = require('../lib/utils');
-if (process.argv.length > 2) {
-	console.dir(geoip.lookup(process.argv[2]));
-	var t3 =+ new Date();
-	console.log('Startup: %dms, exec: %dms', t2 - t1, t3 - t2);
-	process.exit();
-}
 
 var f = [];
 var ip;

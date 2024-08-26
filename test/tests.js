@@ -4,7 +4,7 @@ module.exports = {
 	testLookup: function(test) {
 		test.expect(3);
 
-		var actual = geoip.lookup('1.0.2.0');
+		var actual = geoip.lookup('1.0.65.0');
 		test.ok(actual, 'should return data about IPv4.');
 		console.log(actual);
 
@@ -14,6 +14,7 @@ module.exports = {
 
 		var actual = geoip.lookup("23.240.63.68");
 		test.equal(actual.country, "US");
+		console.log(actual);
 
 		test.done();
 	},
