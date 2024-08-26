@@ -1,7 +1,7 @@
 {
-  "name": "geoip-country",
-  "version": "5.0.202408261235",
-  "description": "Less memory usage version of geoip-lite, by supporting only country lookup.",
+  "name": "geoip-city",
+  "version": "5.0.0",
+  "description": "Quick geolocation lookup from IP address",
   "keywords": [
     "geo",
     "geoip",
@@ -10,9 +10,10 @@
     "ipv6",
     "geolookup",
     "maxmind",
-    "geolite"
+    "geolite",
+    "city"
   ],
-  "homepage": "https://github.com/sapics/geoip-country",
+  "homepage": "https://github.com/sapics/geoip-city",
   "author": "sapics (https://github.com/sapics)",
   "files": [
     "lib/",
@@ -24,7 +25,7 @@
   "main": "lib/geoip.js",
   "repository": {
     "type": "git",
-    "url": "git://github.com/sapics/geoip-country.git"
+    "url": "git://github.com/sapics/geoip-city.git"
   },
   "engines": {
     "node": ">=10.20.0"
