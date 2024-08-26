@@ -1,4 +1,8 @@
 function checkMemory(){
+	if(global.gc){
+		global.gc(true)
+		console.log('Garbage collection done')
+	}
 	const used = process.memoryUsage()
 	const messages = []
 	for (let key in used) {

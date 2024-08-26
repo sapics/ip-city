@@ -45,6 +45,7 @@
 		"update": true
 	},
 	"devDependencies": {
+		"geoip-lite": "^1.4.10",
 		"nodeunit-x": "^0.15.0"
 	},
 	"license": "MaxMind GeoLite2 License"

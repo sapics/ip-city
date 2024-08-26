@@ -3,36 +3,48 @@
 'use strict';
 
 var user_agent = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.36 Safari/537.36';
-var download_server = process.env.npm_config_geolite2_download_url || process.env.GEOLITE2_DOWNLOAD_URL || 'https://download.maxmind.com/app/geoip_download';
+var download_server = process.env.npm_config_geolite2_download_url || process.env.GEOLITE2_DOWNLOAD_URL
+										|| process.env.npm_config_geoip_download_url || process.env.GEOIP_DOWNLOAD_URL
+										|| 'https://download.maxmind.com/app/geoip_download'
 var license_key = process.env.npm_config_license_key || process.env.GEOLITE2_LICENSE_KEY || null;
-var geodatadir = process.env.npm_config_geodatadir || process.env.GEODATADIR;
-var tmpdatadir = process.env.npm_config_geotmpdatadir || process.env.GEOTMPDATADIR;
+var geodatadir = process.env.npm_config_geoip_datadir || process.env.GEOIP_DATADIR
+								|| process.env.npm_config_geodatadir || process.env.GEODATADIR; // alias for older version
+var tmpdatadir = process.env.npm_config_geoip_tmpdatadir || process.env.GEOIP_TMPDATADIR
+								|| process.env.npm_config_geotmpdatadir || process.env.GEOTMPDATADIR;// alias for older version
 var ip_location_db = process.env.npm_config_ip_location_db || process.env.IP_LOCATION_DB || null;
-var series = process.env.npm_config_series || process.env.GEODBSERIES;
-var language = process.env.npm_config_language || process.env.GEOLITE2_LANGUAGE || 'en';
+var series = process.env.npm_config_geoip_series || process.env.GEOIP_SERIES;
+var language = process.env.npm_config_geoip_language || process.env.GEOIP_LANGUAGE || 'en';
 var isDebug = process.argv.indexOf('debug') >= 0;
-var addFakeData = process.env.npm_config_fake_data || process.env.FAKE_DATA || false;
+var addFakeData = process.env.npm_config_geoip_fake_data || process.env.GEOIP_FAKE_DATA || false;
+var addFields = process.env.npm_config_geoip_add_fields || process.env.GEOIP_ADD_FIELDS;
 for(var i = 0; i < process.argv.length; ++i){
 	var arg = process.argv[i];
 	if(isDebug) console.log(arg)
 	if(arg.indexOf('license_key=') >= 0 && !license_key){
 		license_key = arg.slice(arg.indexOf('=') + 1);
-	} else if(arg.indexOf('geodatadir=') >= 0 && !geodatadir){
+	} else if(arg.indexOf('geoip_datadir=') >= 0 && !geodatadir){
 		geodatadir = arg.slice(arg.indexOf('=') + 1);
-	} else if(arg.indexOf('geotmpdatadir=') >= 0 && !tmpdatadir){
+	} else if(arg.indexOf('geoip_tmpdatadir=') >= 0 && !tmpdatadir){
 		tmpdatadir = arg.slice(arg.indexOf('=') + 1);
 	} else if(arg.indexOf('ip_location_db=') >= 0) {
 		ip_location_db = arg.slice(arg.indexOf('=') + 1).replace('-country', '');
-	} else if(arg.indexOf('series=') >= 0){
+	} else if(arg.indexOf('geoip_series=') >= 0){
 		series = arg.slice(arg.indexOf('=') + 1);
-	} else if(arg.indexOf('language=') >= 0){
+	} else if(arg.indexOf('geoip_language=') >= 0){
 		language = arg.slice(arg.indexOf('=') + 1);
-	} else if(arg.indexOf('fake_data=') >= 0){
-		addFakeData = true;
+	} else if(arg.indexOf('geoip_fake_data=') >= 0){
+		addFakeData = arg.slice(arg.indexOf('=') + 1) > 0;
+	} else if(arg.indexOf('geoip_add_fields=') >= 0){
+		addFields = arg.slice(arg.indexOf('=') + 1);
 	}
 }
 if(!series){
 	series = 'GeoLite2';
+}
+if(addFields){
+	addFields = addFields.split(',');
+} else {
+	addFields = [];
 }
 
 const fs = require('fs');
@@ -346,8 +358,8 @@ function processCountryData(src, dest, cb) {
 				// IPv6
 				bsz = 18;
 				rngip = new Address6(fields[0]);
-				sip = utils.aton6n(rngip.startAddress().correctForm());
-				eip = utils.aton6n(rngip.endAddress().correctForm());
+				sip = utils.aton6(rngip.startAddress().correctForm());
+				eip = utils.aton6(rngip.endAddress().correctForm());
 
 				if(isDebug && preEip){
 					if(preEip === sip) {
@@ -448,8 +460,8 @@ function processCountryDataIpLocationDb(src, fileName, srcUrl, cb) {
 			if (src.indexOf('ipv6') > 0) {
 				// IPv6
 				bsz = 18;
-				sip = utils.aton6n(fields[0]);
-				eip = utils.aton6n(fields[1]);
+				sip = utils.aton6(fields[0]);
+				eip = utils.aton6(fields[1]);
 
 				b = Buffer.alloc(bsz);
 				b.fill(0);
@@ -508,18 +520,21 @@ var isPostNumReg2 = /^(\d+)[-\s](\d+)$/;
 var isPostStrReg = /^([A-Z\d]+)$/;
 var isPostStrReg2 = /^([A-Z\d]+)[-\s]([A-Z\d]+)$/;
 function postcodeDatabase(postcode){
+	// number type
 	if(isPostNumReg.test(postcode)){
-		return [postcode.length, // 1~8
-						parseInt(postcode, 10)
+		return [postcode.length, // 1~9
+						parseInt(postcode, 10) // 0~999999999
 					];
 	}
 	var r = isPostNumReg2.exec(postcode);
 	if(r){
 		return [
-			parseInt(r[1].length + '' + r[2].length, 10), // 11~77
-			parseInt(r[1] + r[2], 10)
+			parseInt(r[1].length + '' + r[2].length, 10), // 11~66
+			parseInt(r[1] + r[2], 10) // 0~999999999
 		]
 	}
+
+	// string type
 	r = isPostStrReg.exec(postcode);
 	if(r){
 		var num = parseInt(postcode, 36)
@@ -529,18 +544,18 @@ function postcodeDatabase(postcode){
 				num
 			]
 		} else {
-			var num1 = parseInt(postcode.slice(0, 3), 36)
-			var num2 = parseInt(postcode.slice(3), 36)
+			var num1 = parseInt('2' + postcode.slice(0, 1), 36) // 72~107
+			var num2 = parseInt(postcode.slice(1), 36) // 0~2176782335 MAX: 6char ZZZZZZ
 			return [
-				num1, // Big Integer
-				num2, // 3 digits
+				num1,
+				num2,
 			]
 		}
 	}
 
 	r = isPostStrReg2.exec(postcode);
-	var num1 = - parseInt(r[1].length + "" + r[2].length, 36)// minus
-	var num2 = parseInt(r[1] + r[2], 36)
+	var num1 = - parseInt(r[1].length + "" + r[2].length, 10)// -11~-55
+	var num2 = parseInt(r[1] + r[2], 36) // 0~2176782335 MAX: 6char ZZZZZZ
 	return [
 		num1,
 		num2
@@ -550,6 +565,8 @@ function postcodeDatabase(postcode){
 function processCityData(src, dest, cb) {
 	var isFirstLine = true;
 	var preLocId, preB, preEip = 0, preLat, preLon, prePostcode;
+	var addSize = utils.fieldsSize(addFields);
+	var ipv6Size = 20 + addSize, ipv4Size = 12 + addSize;
 	function processLine(line) {
 		if(isFirstLine){
 			isFirstLine = false;
@@ -561,22 +578,20 @@ function processCityData(src, dest, cb) {
 			console.log("weird line: %s::", line);
 			return;
 		}
-		var sip;
-		var eip;
+		var sip, eip;
 		var rngip;
 		var locId;
 		var b;
 		var bsz;
-		var lat;
-		var lon;
-		var postcode;
-		var i;
+		var lat, lon, area;
+		var postcode, offset;
 		var isNew = true;
 
 		locId = parseInt(fields[1], 10);
 		locId = cityLookup[locId];
 		lat = Math.round(parseFloat(fields[7]) * 10000);
 		lon = Math.round(parseFloat(fields[8]) * 10000);
+		area = fields[9];
 		postcode = fields[6] && postcodeDatabase(fields[6])
 
 		if(preLocId === locId && preLat === lat && preLon === lon && prePostcode[0] === postcode[0] && prePostcode[1] === postcode[1]){
@@ -585,10 +600,10 @@ function processCityData(src, dest, cb) {
 
 		if (fields[0].match(/:/)) {
 			// IPv6
-			bsz = 34;
+			bsz = ipv6Size;
 			rngip = new Address6(fields[0]);
-			sip = utils.aton6n(rngip.startAddress().correctForm());
-			eip = utils.aton6n(rngip.endAddress().correctForm());
+			sip = utils.aton6(rngip.startAddress().correctForm());
+			eip = utils.aton6(rngip.endAddress().correctForm());
 
 			if(isDebug && preEip){
 				if(preEip === sip) {
@@ -606,18 +621,13 @@ function processCityData(src, dest, cb) {
 				b.fill(0);
 				b.writeBigUInt64BE(sip);
 				b.writeBigUInt64BE(eip, 8);
-
-				b.writeUInt32BE(locId>>>0, 16);
-				b.writeInt32BE(lat,20);
-				b.writeInt32BE(lon,24);
-				b.writeInt16BE(postcode[0], 28) // postcode pre [2 bytes]
-				b.writeUInt32BE(postcode[1], 30) // postcode [4 bytes]
+				offset = 20;
 			} else {
 				preB.writeBigUInt64BE(eip, 8);
 			}
 		} else {
 			// IPv4
-			bsz = 26;
+			bsz = ipv4Size;
 
 			rngip = new Address4(fields[0]);
 			sip = parseInt(rngip.startAddress().bigInteger(),10);
@@ -635,17 +645,30 @@ function processCityData(src, dest, cb) {
 				b.fill(0);
 				b.writeUInt32BE(sip>>>0, 0); // ip start [4 bytes]
 				b.writeUInt32BE(eip>>>0, 4); // ip end [4 bytes]
-				b.writeUInt32BE(locId>>>0, 8); // location id [4 bytes]
-				b.writeInt32BE(lat,12); // latitude [4 bytes]
-				b.writeInt32BE(lon,16); // longitude [4 bytes]
-				b.writeInt16BE(postcode[0], 20) // postcode pre [2 bytes]
-				b.writeUInt32BE(postcode[1], 22) // postcode [4 bytes]
+				offset = 12;
 			} else {
 				preB.writeUInt32BE(eip>>>0, 4);
 			}
 		}
 
 		if(isNew){
+			b.writeUInt32BE(locId>>>0, offset - 4);
+			if(addFields.includes('latitude')){
+				b.writeInt32BE(lat, offset);
+				offset += 4;
+			}
+			if(addFields.includes('longitude')){
+				b.writeInt32BE(lon, offset);
+				offset += 4;
+			}
+			if(addFields.includes('area')){
+				b.writeUInt16BE(area, offset);
+				offset += 2;
+			}
+			if(addFields.includes('postcode')){
+				b.writeUInt32BE(postcode[1], offset);
+				b.writeInt8(postcode[0], offset + 4);
+			}
 			if(preB){
 				if(!datFile.write(preB)){
 					rl.pause();
@@ -684,6 +707,7 @@ function processCityData(src, dest, cb) {
 }
 
 var subDatabase1 = {}, subCount1 = 0, subDatabase2 = {}, subCount2 = 0, timezoneDatabase = {}, timezoneCount = 0
+var subCodeDatabase = {};
 function makeTimezoneDatabase(timezone){
 	if(timezoneDatabase[timezone]) return timezoneDatabase[timezone];
 	return timezoneDatabase[timezone] = ++timezoneCount;
@@ -694,6 +718,7 @@ function makeSubDatabase(cc, sub1_code, sub2_code, sub1_name, sub2_name){
 	var indexes = []
 	if(!subDatabase1[code]){
 		subDatabase1[code] = [sub1_name, ++subCount1]
+		subCodeDatabase[code] = [sub1_code, subCount1]
 	}
 	indexes.push(subDatabase1[code][1])
 
@@ -817,15 +842,16 @@ function processCityDataNames(src, dest, cb) {
 		console.log(' DONE');
 		enDatabase = null;
 
-		var tmpSub1 = []
+		var tmpSub1 = [], tmpSub2 = []
 		for(var key in subDatabase1){
 			tmpSub1[subDatabase1[key][1]] = subDatabase1[key][0]
+			tmpSub2[subDatabase1[key][1]] = subCodeDatabase[key][0]
 		}
 		fs.writeFileSync(path.join(dataPath, 'geoip-city-sub1.json'), JSON.stringify(tmpSub1));
-		tmpSub1.length = 0;
-		subDatabase1 = null;
+		fs.writeFileSync(path.join(dataPath, 'geoip-city-sub1-code.json'), JSON.stringify(tmpSub2));
+		tmpSub1.length = tmpSub2.length = 0;
+		subDatabase1 = subCodeDatabase = null;
 
-		var tmpSub2 = []
 		for(var key in subDatabase2){
 			tmpSub2[subDatabase2[key][1]] = subDatabase2[key][0]
 		}

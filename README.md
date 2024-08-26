@@ -1,13 +1,24 @@
 # geoip-country [![NPM version](https://badge.fury.io/js/geoip-country.svg)](https://badge.fury.io/js/geoip-country)
 
-Less memory usage version of [geoip-lite](https://github.com/bluesmoon/node-geoip) by limiting to country information.
-This product includes GeoLite2 ipv4 and ipv6 country data which created by MaxMind, available from https://www.maxmind.com.
-After v5, this library uses less than 12MB memory.
-`geoip-lite` uses over 120MB memory and `geoip-country` v4.2.124 which uses over 17MB memory.
+A native nodejs API to get country information from `ip-address`.
+
+This library is fork of the [geoip-lite](https://github.com/bluesmoon/node-geoip) which provides a very fast ip to geolocation API by loading the ip to geolocation database into memory.
+However, because the database contains city and coordinate information, etc., its size exceeds 120 MB, which means that it uses a lot of memory and takes a long time before the first execution.
+
+`geoip-country` reduces memory usage and speeds up startup and faster lookup by limiting database from geolocation information to country information.
+Futhermore, we add the other information `capital`, `continent_name`, `languages`, etc., from v5.
+You can check the `test/benchmark.js` after updating `geoip-lite` database.
+
+| benchmark (node v20) | database size (MB)  | startup time (ms) | lookup time (ms/ip) |
+| ---- | ---- | ---- |  ---- | 
+| geoip-country | 7 MB  | 13 ms | 0.00123 ms/ip |
+| geoip-lite    | 124MB | 52 ms | 0.00237 ms/ip |
+
+This product includes GeoLite2 ipv4 and ipv6 country data created by [MaxMind](http://maxmind.com/).
 The database of this product **updates twice a weekly**.
 
 **You should read this README and the LICENSE and EULA files carefully before deciding to use this product.**<br>
-**After v4, LICENSE for the database was changed. If you need to use this product with previous LICENSE, please use v3.**
+**After v4, LICENSE for the GeoLite2 database was changed. If you need to use this product with previous LICENSE, please use v3.**
 
 
 ## Synopsis
@@ -20,16 +31,15 @@ var geo = geoip.lookup(ip);
 
 console.log(geo);
 {
-  country_code: 'US', // "2 letter" ISO-3166-1 alpha-2 country code
-  country: 'US',      // alias of country_code
-  country_name: 'United States',
-  country_name_native: 'United States',
-  phone: [ 1 ],
+  country: 'US', // "2 letter" country code defined at ISO-3166-1 alpha-2
+  name: 'United States',
+  native: 'United States',
   continent: 'NA',
+  continent_name: 'North America',
+  phone: [ 1 ],
   capital: 'Washington D.C.',
   currency: [ 'USD', 'USN', 'USS' ],
   languages: [ 'en' ],
-  continent_name: 'North America'
 }
 ```
 
@@ -43,15 +53,14 @@ $ npm i geoip-country
 
 ## API
 
-geoip-country is completely synchronous.  There are no callbacks involved.  All blocking file IO is done at startup time, so all runtime
-calls are executed in-memory and are fast.  Startup may take up to 20ms while it reads into memory and indexes data files.
+geoip-country is completely synchronous. There are no callbacks involved. All blocking file IO is done at startup time, so all runtime
+calls are executed in-memory and are fast. Startup may take up to 20ms while it reads into memory and indexes data files.
 
 
 ### Looking up an IP address ###
 
 If you have an IP address in dotted quad notation, IPv6 colon notation, or a 32 bit unsigned integer (treated
-as an IPv4 address), pass it to the `lookup` method.  Note that you should remove any `[` and `]` around an
-IPv6 address before passing it to this method.
+as an IPv4 address), pass it to the `lookup` method.
 
 ```javascript
 var geo = geoip.lookup(ip);
@@ -61,23 +70,38 @@ If the IP address was found, the `lookup` method returns an object with the foll
 
 ```javascript
 {
-  country_code: 'CN',
-  country: 'CN',
-  country_name: 'China',
-  country_native_name: '中国'
+  country: 'CN', // "2 letter" country code defined at ISO-3166-1 alpha-2
+  name: 'China',
+  native: '中国',
+  continent: 'AS',
+  continent_name: 'Asia',
   phone: [ 86 ],
   capital: 'Beijing',
   currency: [ 'CNY' ],
   languages: [ 'zh' ],
-  continent: 'AS',
-  continent_name: 'Asia',
 }
 ```
 
-If the IP address was not found, the `lookup` returns `null`
+If the IP address was not found, the `lookup` returns `null`.
 
-We use two databases. One is `geolite2 country database` for linking `ip address` to `country_code`.
-Second database is [Countries](https://github.com/annexare/Countries) database which is published under MIT License for linking `country_code` to `country_name`, `capital`, `continent`, etc.
+We use two databases for getting `ip address` to `geo` data.
+First is `GeoLite2 country` database for linking `ip address` to `country` which is "2 letter" country code which is defined at ISO-3166-1 alpha-2 [wiki](https://en.wikipedia.org/wiki/ISO_3166-1).
+Second database is [Countries](https://github.com/annexare/Countries) database which is published under MIT License for linking `country` to `languages`, `capital`, `continent`, etc.
+
+
+## Built-in Updater
+
+This package contains an update script that can pull the files from MaxMind and handle the conversion from CSV.
+A npm script alias has been setup to make this process easy. Please keep in mind this requires internet and MaxMind
+rate limits that amount of downloads on their servers.
+
+```bash
+npm run updatedb --license_key=YOUR_GEOLITE2_LICENSE_KEY
+	or
+GEOLITE2_LICENSE_KEY=YOUR_GEOLITE2_LICENSE_KEY node scripts/updatedb.js
+```
+
+_YOUR_GEOLITE2_LICENSE_KEY should be replaced by a valid GeoLite2 license key. Please [follow instructions](https://dev.maxmind.com/geoip/geoip2/geolite2/) provided by MaxMind to obtain a license key._
 
 
 ### Update database API [Added at v4.1.0]
@@ -98,33 +122,18 @@ By setting the environmental variable `GEOLITE2_LICENSE_KEY`, you can update wit
 ```
 
 
-## Built-in Updater
-
-This package contains an update script that can pull the files from MaxMind and handle the conversion from CSV.
-A npm script alias has been setup to make this process easy. Please keep in mind this requires internet and MaxMind
-rate limits that amount of downloads on their servers.
-
-```shell
-npm run updatedb --license_key=YOUR_GEOLITE2_LICENSE_KEY
-	or
-GEOLITE2_LICENSE_KEY=YOUR_GEOLITE2_LICENSE_KEY node scripts/updatedb.js
-```
-
-_YOUR_GEOLITE2_LICENSE_KEY should be replaced by a valid GeoLite2 license key. Please [follow instructions](https://dev.maxmind.com/geoip/geoip2/geolite2/) provided by MaxMind to obtain a license key._
-
-
-## Custom Directory for database files
-
-You can store the database files in custom directory with the environment variable `GEODATADIR` or CLI parameter `--geodatadir=XXXXX`.
-For creating or updating the database files in custom directory, you need to run built-in updater as documented above with setting the environment variable `GEODATADIR` or CLI parameter `--geodatadir=XXXXX`.
-If you have no write-access to the `geoip-country` directory, it would be better to set the environment `GEOTMPDATADIR` or CLI parameter `--geotmpdatadir=YYYYY` for temporary directory when updating the database files.
-
-
 ## Use ip-location-db database
 
 You can use [ip-location-db](https://github.com/sapics/ip-location-db) database with the environment variable `IP_LOCATION_DB` or CLI parameter `--ip_location_db=XXXXX`. For example, if you want to use `geolite2-geo-whois-asn-country`, you can update the database by executing `npm run updatedb --ip_location_db=geolite2-geo-whois-asn`.
 
 If you cannot use `geolite2` licence for your use-case, the licence issue can be circumvented by replacing the database in [ip-location-db](https://github.com/sapics/ip-location-db), as there is also a [CC0](https://creativecommons.org/publicdomain/zero/1.0/deed) license database in [ip-location-db](https://github.com/sapics/ip-location-db).
+
+
+## Custom Directory for database files
+
+You can store the database files in custom directory with the environment variable `GEOIP_DATADIR` or CLI parameter `--geoip_datadir=XXXXX`.
+For creating or updating the database files in custom directory, you need to run built-in updater as documented above with setting the environment variable `GEOIP_DATADIR` or CLI parameter `--geoip_datadir=XXXXX`.
+If you have no write-access to the `geoip-country` directory, it would be better to set the environment `GEOIP_TMPDATADIR` or CLI parameter `--geoip_tmpdatadir=YYYYY` for temporary directory when updating the database files.
 
 
 ## License and EULA
