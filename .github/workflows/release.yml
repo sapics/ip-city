@@ -1,7 +1,7 @@
 name: Auto dastabase update
 on:
   schedule:
-    - cron: '48 22 * * Tue,Fri'
+    - cron: '53 22 * * Tue,Fri'
   workflow_dispatch:
 jobs:
   release:
