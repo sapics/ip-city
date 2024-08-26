@@ -11,8 +11,8 @@ You can check the `test/benchmark.js` after updating `geoip-lite` database.
 
 | benchmark (node v20) | database size | startup time | lookup time |
 | ---- | ---- | ---- |  ---- | 
-| ip-city<br>(default) | 37 MB | 40 ms | 0.00151 ms/ip |
-| ip-city<br>(add all custome fields) | 72 MB | 52 ms | 0.00158 ms/ip |
+| ip-city<br>(remove all custom fields) | 37 MB | 40 ms | 0.00151 ms/ip |
+| ip-city<br>(default) | 72 MB | 52 ms | 0.00158 ms/ip |
 | geoip-lite | 124MB | 52 ms | 0.00237 ms/ip |
 
 
@@ -47,7 +47,7 @@ console.log(geo);
   name: 'France',
   native: 'France',
   phone: [ 33 ],
-  continent: 'NA',
+  continent: 'EU',
   capital: 'Paris',
   currency: [ 'EUR' ],
   languages: [ 'fr' ],
@@ -99,18 +99,18 @@ Note that as far as possible, the same field names as in `geoip-lite` are used, 
 | metro   | metro | Geolocation target code from Google |
 | city    | city | city name |
 | timezone | timezone | The time zone associated with location |
-| latitude<br>custom field | ll[0] | geographic coordinate |
-| longitude<br>custom field | ll[1] | geographic coordinate |
-| area<br>custom field | area | The radius in kilometers around the specified location where the IP address is likely to be |
-| postcode<br>custom field | ❌️ | postcode |
-| name | ❌️ | country name from `country code` |
-| native | ❌️ | country name in native language from `country code` |
-| phone | ❌️ | country calling codes from `country code` |
-| continent | ❌️ | continent short code from `country code` |
-| continent_name | ❌️ | continent name from `country code` |
-| capital | ❌️ | capital name from `country code` |
-| currency | ❌️ | List of commonly used currencies from `country code` |
-| languages | ❌️ | List of commonly used languages from `country code` |
+| latitude<br>[custom field] | ll[0] | geographic coordinate |
+| longitude<br>[custom field] | ll[1] | geographic coordinate |
+| area<br>[custom field] | area | The radius in kilometers around the specified location where the IP address is likely to be |
+| postcode<br>[custom field] | ❌️ | postcode |
+| name | ❌️ | country name from [Countries](https://github.com/annexare/Countries) |
+| native | ❌️ | country name in native language from [Countries](https://github.com/annexare/Countries) |
+| phone | ❌️ | country calling codes from [Countries](https://github.com/annexare/Countries) |
+| continent | ❌️ | continent short code from [Countries](https://github.com/annexare/Countries) |
+| continent_name | ❌️ | continent name from [Countries](https://github.com/annexare/Countries) |
+| capital | ❌️ | capital name from [Countries](https://github.com/annexare/Countries) |
+| currency | ❌️ | List of commonly used currencies from [Countries](https://github.com/annexare/Countries) |
+| languages | ❌️ | List of commonly used languages from [Countries](https://github.com/annexare/Countries) |
 
 
 ## Built-in Updater
@@ -148,7 +148,8 @@ By setting the environmental variable `GEOLITE2_LICENSE_KEY`, you can update wit
 
 ## Customize database fields
 
-You can add fields `latitude`, `longitude`, `area`, `postcode` with the environmental variable `GEO_ADD_FIELDS=latitude,longitude,area,postcode` or CLI parameter `--geoip_add_fields=latitude,longitude,area,postcode`.
+You can remove unused fields `latitude`, `longitude`, `area`, `postcode` with the environmental variable `GEO_UNUSED_FIELDS=latitude,longitude,area,postcode` or CLI parameter `--geoip_unused_fields=latitude,longitude,area,postcode`.
+It makes less memory usage and faster startup.
 Note that when using `geoip.lookup()` and updating the database, the fields must always be the same.
 
 
