@@ -1,18 +1,18 @@
-# geoip-city [![NPM version](https://badge.fury.io/js/geoip-city.svg)](https://badge.fury.io/js/geoip-city)
+# ip-city [![NPM version](https://badge.fury.io/js/ip-city.svg)](https://badge.fury.io/js/ip-city)
 
 A native nodejs API to get geolocation information from ip address.
 
 This library is fork of the [geoip-lite](https://github.com/bluesmoon/node-geoip) which provides a very fast ip to geolocation API by loading the ip to geolocation database into memory.
 However, because the database contains city and coordinate information, etc., its size exceeds 120 MB, which means that it uses a lot of memory and takes a long time before the first execution.
 
-`geoip-city` reduces memory usage and faster startup and faster lookup by database customization.
+`ip-city` reduces memory usage and faster startup and faster lookup by database customization.
 Futhermore, we add the other information `capital`, `continent_name`, `languages`, etc., from v5.
 You can check the `test/benchmark.js` after updating `geoip-lite` database.
 
 | benchmark (node v20) | database size | startup time | lookup time |
 | ---- | ---- | ---- |  ---- | 
-| geoip-city<br>(default) | 37 MB | 40 ms | 0.00151 ms/ip |
-| geoip-city<br>(add all custome fields) | 72 MB | 52 ms | 0.00158 ms/ip |
+| ip-city<br>(default) | 37 MB | 40 ms | 0.00151 ms/ip |
+| ip-city<br>(add all custome fields) | 72 MB | 52 ms | 0.00158 ms/ip |
 | geoip-lite | 124MB | 52 ms | 0.00237 ms/ip |
 
 
@@ -26,7 +26,7 @@ The database of this product **updates twice a weekly**.
 ## Synopsis
 
 ```javascript
-var geoip = require('geoip-city');
+var geoip = require('ip-city');
 
 var ip = "207.97.227.239";
 var geo = geoip.lookup(ip);
@@ -59,13 +59,13 @@ console.log(geo);
 ## Installation
 
 ```bash
-$ npm i geoip-city
+$ npm i ip-city
 ```
 
 
 ## API
 
-geoip-city is completely synchronous. There are no callbacks involved. All blocking file IO is done at startup time, so all runtime
+ip-city is completely synchronous. There are no callbacks involved. All blocking file IO is done at startup time, so all runtime
 calls are executed in-memory and are fast. Startup may take up to 50ms while it reads into memory and indexes data files.
 
 
@@ -168,7 +168,7 @@ Please set CLI parameter `--geoip_series=GeoIP2` or environment `GEOIP_SERIES=Ge
 
 You can store the database files in custom directory with the environment variable `GEOIP_DATADIR` or CLI parameter `--geoip_datadir=XXXXX`.
 For creating or updating the database files in custom directory, you need to run built-in updater as documented above with setting the environment variable `GEOIP_DATADIR` or CLI parameter `--geoip_datadir=XXXXX`.
-If you have no write-access to the `geoip-city` directory, it would be better to set the environment `GEOIP_TMPDATADIR` or CLI parameter `--geoip_tmpdatadir=YYYYY` for temporary directory when updating the database files.
+If you have no write-access to the `ip-city` directory, it would be better to set the environment `GEOIP_TMPDATADIR` or CLI parameter `--geoip_tmpdatadir=YYYYY` for temporary directory when updating the database files.
 
 
 ## License and EULA
@@ -183,7 +183,7 @@ You can read [the latest version of GeoLite2 EULA](https://www.maxmind.com/en/ge
 GeoLite2 database is provided under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) by [MaxMind](https://www.maxmind.com/), so, you must create attribusion to [MaxMind](https://www.maxmind.com/) for using GeoLite2 database.
 
 
-The license for the software itself is an Apache License 2.0 by [geoip-city](https://github.com/sapics/geoip-city).
+The license for the software itself is an Apache License 2.0 by [ip-city](https://github.com/sapics/ip-city).
 This software is created from the repository [geoip-lite/node-geoip](https://github.com/geoip-lite/node-geoip).
 The software license of [geoip-lite/node-geoip](https://github.com/geoip-lite/node-geoip) is Apache License 2.0.
 
