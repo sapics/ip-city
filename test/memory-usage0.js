@@ -12,4 +12,4 @@ function checkMemory(){
 }
 
 console.log('Memory usage before loading library')
-checkMemory();
+checkMemory()

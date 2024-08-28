@@ -12,22 +12,22 @@ function checkMemory(){
 }
 
 console.log('Memory usage before loading library')
-checkMemory();
+checkMemory()
 
-var timeStart = Date.now();
-var geoip = require('../lib/geoip');
-var timeEnd = Date.now();
-console.log('Library load time: %d ms', timeEnd - timeStart);
+var timeStart = Date.now()
+var geoip = require('../lib/geoip')
+var timeEnd = Date.now()
+console.log('Library load time: %d ms', timeEnd - timeStart)
 
 console.log('Memory usage after loading library')
-checkMemory();
+checkMemory()
 
 async function test(){
 	return new Promise(function(resolve, reject){
 		setTimeout(function(){
-			checkMemory();
-			resolve();
-		}, 5000);
+			checkMemory()
+			resolve()
+		}, 5000)
 	})
 }
 async function run(){
