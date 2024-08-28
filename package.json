@@ -19,6 +19,7 @@
     "lib/",
     "data/",
     "scripts/",
+    "test/",
     "LICENSE",
     "EULA"
   ],
