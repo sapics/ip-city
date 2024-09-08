@@ -1,3 +1,7 @@
+[!CAUTION]
+This repository would not maintaine any more.
+We have strongly recommended to use new library [ip-location-api](https://github.com/sapics/ip-location-api) which has faster and customizable system.
+
 # ip-city [![NPM version](https://badge.fury.io/js/ip-city.svg)](https://badge.fury.io/js/ip-city)
 
 A native nodejs API to get geolocation information from ip address.
